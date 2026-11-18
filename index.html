@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gaurav – Health Record</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Clinical notebook: calm teal accent, a severity stripe on every row, summary first then detail */
+  --bg:#f5f7f7; --panel:#ffffff; --ink:#1b2a2e; --muted:#5d6f73; --line:#dde5e6;
+  --accent:#0f6e74; --accent-soft:#e2f0f0;
+  --low:#1f5fae; --low-soft:#e4edfa; --high:#b3261e; --high-soft:#fbe9e7;
+  --ok:#2e7d4f; --ok-soft:#e6f3eb; --note:#8a6100; --note-soft:#fbf0d4;
+  --display:"Fraunces", Georgia, serif; --body:"Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#111819; --panel:#182224; --ink:#e3ecec; --muted:#9aaeb0; --line:#2a383a;
+    --accent:#5cc0c4; --accent-soft:#16393b;
+    --low:#7fb0ec; --low-soft:#18273d; --high:#f08a80; --high-soft:#3d2120;
+    --ok:#7ccf9c; --ok-soft:#1b3326; --note:#e0b44a; --note-soft:#3a2f12; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#111819; --panel:#182224; --ink:#e3ecec; --muted:#9aaeb0; --line:#2a383a;
+  --accent:#5cc0c4; --accent-soft:#16393b;
+  --low:#7fb0ec; --low-soft:#18273d; --high:#f08a80; --high-soft:#3d2120;
+  --ok:#7ccf9c; --ok-soft:#1b3326; --note:#e0b44a; --note-soft:#3a2f12; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:1040px;margin:0 auto;padding:24px 20px 60px;display:grid;gap:20px}
+header{display:grid;gap:6px}
+h1{font-family:var(--display);font-weight:600;font-size:30px;margin:0;text-wrap:balance}
+h2{font-family:var(--display);font-weight:600;font-size:21px;margin:0}
+h3{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0}
+.sub{color:var(--muted);margin:0}
+.save{font-size:13px;color:var(--muted)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:grid;gap:2px}
+.tile b{font-size:26px;font-variant-numeric:tabular-nums}
+.tile span{color:var(--muted);font-size:13px}
+.wt small{font-size:12.5px;font-weight:700;color:var(--ink,#1d2b3a)}
+.wt b{font-size:22px}
+.wt{align-content:start}
+.wt:hover{border-color:#1f5fae}
+.tile li b{font-size:inherit;color:var(--ink,#1d2b3a)}
+.attn{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--high);border-radius:10px;padding:14px 18px}
+.attn ul{margin:8px 0 0;padding-left:20px;display:grid;gap:4px}
+nav{display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--line)}
+nav a{padding:10px 14px;color:var(--muted);text-decoration:none;font-weight:600;border-bottom:3px solid transparent;margin-bottom:-1px}
+nav a[aria-current="page"]{color:var(--accent);border-color:var(--accent)}
+nav a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.chip{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:999px;padding:6px 12px;font:inherit;font-size:13px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+.list{display:grid;gap:10px}
+.q{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--line);border-radius:10px;padding:14px 16px;display:grid;gap:8px}
+.q.open{border-left-color:var(--low)} .q.asked{border-left-color:var(--note)} .q.answered{border-left-color:var(--ok)}
+.q .top{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tag{font-size:12px;font-weight:600;padding:2px 8px;border-radius:6px;background:var(--accent-soft);color:var(--accent)}
+.tag.pri{background:var(--high-soft);color:var(--high)}
+.q .ques{font-weight:600;font-size:16px}
+.q .why{color:var(--muted);margin:0}
+.q .why b{color:var(--ink);font-weight:600}
+.status{display:flex;gap:6px;flex-wrap:wrap}
+.status button{font:inherit;font-size:13px;border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:6px;padding:4px 10px;cursor:pointer}
+.status button[aria-pressed="true"].s-open{background:var(--low-soft);border-color:var(--low);color:var(--low)}
+.status button[aria-pressed="true"].s-asked{background:var(--note-soft);border-color:var(--note);color:var(--note)}
+.status button[aria-pressed="true"].s-answered{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
+textarea,input,select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px;width:100%}
+textarea{min-height:60px;resize:vertical}
+label{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;display:grid;gap:12px}
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;align-items:end}
+.btn{font:inherit;font-weight:600;background:var(--accent);color:var(--panel);border:0;border-radius:6px;padding:9px 14px;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+.tablewrap{overflow-x:auto;background:var(--panel);border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+thead th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);background:var(--bg);white-space:nowrap}
+tbody tr.grp td{background:var(--accent-soft);color:var(--accent);font-weight:700;font-size:13px}
+td.name b{display:block}
+td.name small{color:var(--muted);display:block;max-width:44ch}
+td.v{white-space:nowrap;font-weight:600}
+td.v.l{background:var(--low-soft);color:var(--low)}
+td.v.h{background:var(--high-soft);color:var(--high)}
+td.v.x{background:var(--note-soft);color:var(--note)}
+td.v.n{color:var(--ok)}
+td.v .fl{font-size:11px;font-weight:700;margin-left:4px}
+td.rng{color:var(--muted);font-size:13px;min-width:120px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.tl{display:grid;gap:0;background:var(--panel);border:1px solid var(--line);border-radius:10px}
+.tl div{display:grid;grid-template-columns:110px 1fr;gap:14px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.tl div:last-child{border-bottom:0}
+.tl time{font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums}
+.tl p{margin:0}
+.tl p.d{color:var(--muted);font-size:14px}
+.hide{display:none}
+.note{font-size:13px;color:var(--muted);margin:0}
+@media (max-width:520px){.tl div{grid-template-columns:1fr;gap:2px}h1{font-size:25px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<style>
+:root{--zl:#c9daf3;--zn:#cbe7d5;--zh:#f2c6c1}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--zl:#1d3047;--zn:#1f3d2a;--zh:#4a2522}}
+:root[data-theme="dark"]{--zl:#1d3047;--zn:#1f3d2a;--zh:#4a2522}
+.wrap{max-width:1280px}
+.lay{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:16px;align-items:start}
+.rgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
+.rt{text-align:left;font:inherit;color:inherit;background:var(--panel);border:1px solid var(--line);border-top:4px solid var(--ok);border-radius:8px;padding:10px 11px;cursor:pointer;display:grid;gap:4px;align-content:start;min-height:156px;transition:transform .15s,box-shadow .15s}
+.rt:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(20,30,40,.08)}
+.rt.l{border-top-color:var(--low)}.rt.h{border-top-color:var(--high)}.rt.x{border-top-color:var(--note)}
+.rt[aria-pressed="true"]{outline:2px solid var(--accent);outline-offset:1px}
+.rt .row{display:flex;justify-content:space-between;align-items:baseline;gap:6px}
+.sym{font-family:var(--display);font-size:28px;font-weight:600;line-height:1}
+.rt .grp{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;text-align:right;line-height:1.2}
+.tn{font-size:13px;color:var(--muted);line-height:1.25;min-height:2.5em}
+.vv{font-weight:700;font-size:15px;font-variant-numeric:tabular-nums}.vv.l{color:var(--low)}.vv.h{color:var(--high)}.vv.x{color:var(--note)}.vv.n{color:var(--ok)}
+.vv small{font-weight:400;color:var(--muted);font-size:11px}
+.spec{position:relative;height:10px;display:flex;margin-top:4px}
+.spec span{height:100%}
+.spec .zl{background:var(--zl);border-radius:5px 0 0 5px}.spec .zn{background:var(--zn)}.spec .zh{background:var(--zh);border-radius:0 5px 5px 0}
+.spec .none{background:var(--line);border-radius:5px;flex:1}
+.mk{position:absolute;top:-3px;width:4px;height:16px;border-radius:2px;background:var(--ink);transform:translateX(-50%)}
+.mk.old{opacity:.35;width:3px;height:12px;top:-1px}
+.speclab{display:flex;justify-content:space-between;font-size:10px;color:var(--muted)}
+.big .spec{height:14px}.big .mk{height:22px;top:-4px}.big .mk.old{height:16px;top:-1px}
+.mlab{position:absolute;transform:translateX(-50%);font-size:10px;white-space:nowrap;color:var(--muted)}
+.ordt{font-size:12px;font-weight:600;margin-top:2px}.ordt.y{color:var(--ok)}.ordt.n{color:var(--muted)}
+td.ord{text-align:center;white-space:nowrap}
+td.ord .yes{color:var(--ok);font-weight:700;font-size:18px}
+td.ord .no{color:var(--high);font-weight:700;font-size:18px;opacity:.7}
+td.ord small{display:block;color:var(--muted);font-size:11px;white-space:normal;max-width:16ch;margin:0 auto}
+.side{position:sticky;top:12px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;max-height:calc(100vh - 24px);overflow:auto}
+.side h2{margin:0}
+.ph{display:flex;gap:12px;align-items:center}
+.psym{font-family:var(--display);font-size:30px;font-weight:600;min-width:62px;height:62px;padding:0 8px;display:grid;place-items:center;border-radius:10px;background:var(--ok-soft);color:var(--ok)}
+.psym.l{background:var(--low-soft);color:var(--low)}.psym.h{background:var(--high-soft);color:var(--high)}.psym.x{background:var(--note-soft);color:var(--note)}
+.pill{display:inline-block;font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px;margin-top:4px;background:var(--ok-soft);color:var(--ok)}
+.pill.l{background:var(--low-soft);color:var(--low)}.pill.h{background:var(--high-soft);color:var(--high)}.pill.x{background:var(--note-soft);color:var(--note)}
+.hist{display:grid;gap:2px;margin:8px 0 6px}
+.hist div{display:flex;justify-content:space-between;font-size:13px;border-bottom:1px dashed var(--line);padding:3px 0;font-variant-numeric:tabular-nums}
+.ordline{margin:10px 0;padding:8px 10px;border-radius:8px;font-size:14px;font-weight:600}
+.ordline.y{background:var(--ok-soft);color:var(--ok)}.ordline.n{color:var(--muted);border:1px dashed var(--line)}
+.blk{margin-top:12px}.blk h3{color:var(--accent);margin-bottom:4px}.blk p,.blk ul{margin:0}.blk ul{padding-left:18px;display:grid;gap:3px}
+.x-close{display:none;float:right}
+.sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.sc{background:var(--panel);border:1px solid var(--line);border-left:5px solid var(--ok);border-radius:10px;padding:14px 16px;display:grid;gap:6px;align-content:start}
+.sc.stop{border-left-color:var(--high);background:var(--high-soft)}.sc.change{border-left-color:var(--low)}.sc.add{border-left-color:var(--accent)}.sc.later{border-left-color:var(--note)}
+.sc h3{font-size:16px;text-transform:none;letter-spacing:0;color:var(--ink);margin:0}
+.sc .dose{font-size:13px;color:var(--muted)}
+.sc .when{font-size:13px}
+.sb{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;text-transform:uppercase;letter-spacing:.04em;justify-self:start}
+.sb.stop{background:var(--high);color:#fff}.sb.change{background:var(--low-soft);color:var(--low)}.sb.add{background:var(--accent-soft);color:var(--accent)}.sb.later{background:var(--note-soft);color:var(--note)}.sb.keep{background:var(--ok-soft);color:var(--ok)}
+.sc.research{border-left-color:#8a96a3;border-left-style:dashed;background:#f7f8fa}
+.sb.research{background:#eceff3;color:#3f4a57;border:1px dashed #8a96a3}.sb.hold{background:#fff1d6;color:#8a5a00;border:1px dashed #c27c0e}.sb.planned{background:#e6f0fb;color:#24558f;border:1px dashed #5b87bf}
+.rt3{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.rt3 .card ul,.dcard ul{margin:0;padding-left:18px;display:grid;gap:4px}
+.dgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px}
+.dcard{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:grid;gap:8px;align-content:start}
+.dcard h3{font-size:15px;color:var(--accent);margin:0}
+.ptab{width:100%;border-collapse:collapse;font-size:14px}.ptab td{padding:5px 6px;border-bottom:1px dashed var(--line)}.ptab td:last-child{text-align:right;font-weight:600;white-space:nowrap}
+td.qcol{min-width:240px;max-width:320px}
+.qc{font-size:13px;line-height:1.35;padding-left:8px;border-left:3px solid var(--low);margin-bottom:8px}
+.qc.asked{border-left-color:var(--note)}.qc.answered{border-left-color:var(--ok)}
+.qc b{font-weight:600;display:block}.qc small{color:var(--muted)}
+.stg{cursor:pointer}
+.stg:hover{filter:brightness(.95)}
+.cday{display:block;font-size:11px;font-weight:500;line-height:1.3;color:#5b3a99;margin-top:4px;white-space:normal;width:120px}
+.hm td{width:20px;height:20px;padding:0;border:1px solid #fff}
+.hm th{font-size:11px;font-weight:600;color:#5b6672;padding:2px 4px;text-align:right;white-space:nowrap}
+.hm td.pd{box-shadow:inset 0 0 0 2px #d6336c}
+.gl{color:inherit;text-decoration:underline dotted 2px;text-underline-offset:3px;cursor:pointer;border-radius:3px}
+.gl:hover,.gl:focus{background:var(--note-soft,#fff3d6);outline:none}
+#gloss{max-width:560px;width:calc(100% - 32px);border:1px solid var(--line,#ddd);border-radius:14px;padding:22px 24px;box-shadow:0 18px 50px rgba(0,0,0,.25);font-size:15px;line-height:1.5}
+#cycpop{max-width:980px;width:calc(100% - 32px);border:1px solid var(--line,#ddd);border-radius:14px;padding:22px 24px;box-shadow:0 18px 50px rgba(0,0,0,.25);font-size:14px;line-height:1.45}
+#cycpop::backdrop{background:rgba(0,0,0,.35)}
+#cycpop .gx{position:absolute;top:10px;right:12px;border:0;background:none;font-size:22px;cursor:pointer;color:var(--muted,#666)}
+.cyq{width:34px;height:30px;border:2px solid;border-radius:7px;background:#fff;font-weight:700;font-size:13px;cursor:pointer}
+.cyq:hover{filter:brightness(.95)}
+.cyq{position:relative}
+.cyq:hover::after,.cyq:focus-visible::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#1d2b3a;color:#fff;font-size:12px;font-weight:600;padding:4px 8px;border-radius:6px;white-space:nowrap;z-index:5;pointer-events:none}
+.cyleg{display:flex;flex-wrap:wrap;gap:14px;font-size:12.5px;color:#1d2b3a}
+.cyleg i{display:inline-block;width:22px;height:12px;margin-right:6px;vertical-align:middle}
+#gloss::backdrop{background:rgba(0,0,0,.35)}
+.fbar{display:flex;flex-wrap:wrap;gap:6px}
+.fgoal{font-size:15px;margin:4px 0 8px}
+.fnotes summary{cursor:pointer;font-weight:600;color:var(--accent,#0f6e74)}
+.fnotes ul{margin:8px 0 0;padding-left:18px;display:grid;gap:8px;font-size:14px;line-height:1.5}
+.fgo{display:inline-block;background:#eef6f6;color:#0f6e74;border:1px solid #cfe5e3;border-radius:999px;padding:2px 9px;font-size:12px;margin:0 4px 4px 0;font-weight:600}
+.flater{background:#fbefd0!important;color:#9a6a12!important;border-color:#ecd9a6!important}
+.fopt{background:#fbf6ea;border-left:4px solid #c27c0e;padding:8px 10px;border-radius:6px;font-size:14px}
+.fsess h3{margin:14px 0 6px;font-size:16px}.fsess h3 small{font-weight:400;color:var(--muted,#5b6672)}
+.fexl{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px}
+.exl{display:flex;gap:10px;align-items:center;width:100%;text-align:left;background:var(--panel,#fff);border:1px solid var(--line,#d9dee5);border-radius:10px;padding:6px 10px;cursor:pointer;font:inherit;color:inherit}
+.exl:hover,.ftile:hover{border-color:#0f6e74;box-shadow:0 2px 8px rgba(15,110,116,.15)}
+.exl b{display:block;font-size:13.5px;line-height:1.3}.exl small{display:block;color:var(--muted,#5b6672);font-size:12.5px}
+.fth{flex:0 0 74px;width:74px;display:block}.fth0{font-size:30px;text-align:center;color:#c27c0e}
+.ftiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.ftile{display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--panel,#fff);border:1px solid var(--line,#d9dee5);border-radius:10px;padding:8px;cursor:pointer;font:inherit;color:inherit;font-size:13px;text-align:center}
+.ftile .fth{width:120px;flex-basis:auto}
+.ftile .flater{font-size:11px;border-radius:999px;padding:1px 8px;border:1px solid}
+.fgh{margin:14px 0 6px;font-size:15px}
+.fweek{border-collapse:collapse;width:100%;font-size:13.5px}.fweek th,.fweek td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line,#e3e6ea);vertical-align:top}.fweek tr.fsel td{background:#eef6f6}
+.linkb{background:none;border:0;padding:0;color:#0f6e74;font:inherit;font-weight:600;cursor:pointer;text-decoration:underline}
+#gloss.wide{max-width:860px}.fver{display:block;font-size:11.5px;color:var(--muted,#5b6672);line-height:1.3}.fver i{font-style:normal;font-weight:700;color:#0f6e74}.fvtab tr.fcur th,.fvtab tr.fcur td{background:#eef6f6}.fvtab th small{font-weight:400;color:#0f6e74}.fmeter{margin:8px 0 10px;font-size:14px}.fmbar{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-top:6px}.fmbar span{border-radius:8px;padding:6px 8px;font-size:13px;line-height:1.3}.fmbar small{font-size:12px}.fmg{background:#d8efe0;color:#245c3a}.fmy{background:#fbefc4;color:#6e5200;outline:3px solid #c9a000}.fmr{background:#f6d6d3;color:#8e2a20}
+.ffr{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.ffr figure{margin:0;border:1px solid var(--line,#e3e6ea);border-radius:10px;padding:6px;background:#fbfcfd}
+.ffr figcaption{font-size:13px;line-height:1.4;padding:4px 2px}
+.ftab{border-collapse:collapse;width:100%;font-size:14px}.ftab th{text-align:left;width:30%;padding:6px 8px;vertical-align:top;background:#f5f7f9;border-bottom:1px solid #e3e6ea}.ftab td{padding:6px 8px;border-bottom:1px solid #e3e6ea;vertical-align:top}
+.fbadges{margin:0 0 6px}
+.fphases{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px}.fphase{display:flex;flex-direction:column;gap:3px;text-align:left;background:var(--panel,#fff);border:2px solid var(--line,#d9dee5);border-radius:12px;padding:10px 12px;cursor:pointer;font:inherit;color:inherit}.fphase[aria-pressed=true]{border-color:#0f6e74;background:#eef6f6}.fphase b{font-size:15px}.fphase small{color:#0f6e74;font-weight:600}.fphase span{font-size:13px;color:var(--muted,#5b6672)}.fsum{cursor:pointer;font-weight:700;font-size:15px}
+.frest{font-size:13.5px;background:#f5f7f9;border-radius:8px;padding:6px 10px;margin:0 0 8px}
+.ftests{list-style:none;padding:0;margin:0;display:grid;gap:6px;font-size:14px}.ftests label{display:flex!important;gap:8px;align-items:flex-start;justify-content:flex-start!important;text-align:left;cursor:pointer;width:auto}.ftests input{margin-top:3px;width:auto!important;flex:0 0 auto}.ftests label span,.ftests label{flex-wrap:nowrap}
+
+#gloss h2{margin:0 0 10px;font-size:20px}
+#gloss h3{margin:16px 0 6px;font-size:15px}
+#gloss ul{margin:0;padding-left:20px;display:grid;gap:6px}
+#gloss ul ul{margin-top:4px;gap:2px}
+#gloss .gx{position:absolute;top:10px;right:12px;border:0;background:none;font-size:22px;cursor:pointer;color:var(--muted,#666)}
+.qchk{list-style:none;padding:0;margin:6px 0 4px;display:grid;gap:3px;font-size:14px}
+.qchk li::before{content:"☐ ";font-size:15px}
+.qc .qchk{font-size:13px}
+.cidx{display:grid;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--muted)}
+.cidx div{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center}
+.cidx b{color:var(--ink);min-width:86px}
+.cidx span{display:inline-flex;align-items:center;gap:6px}
+.cidx i{display:inline-block;width:22px;height:16px;border-radius:3px}
+.cidx i.bar-i{height:9px;border-radius:5px}
+.cidx i.dot{width:12px;height:12px;border-radius:50%}
+.cidx i.ring{width:18px;height:18px;border-radius:50%;border:2px solid var(--muted);background:transparent}
+.cidx i.mk-i{width:4px;height:15px;border-radius:2px;background:var(--ink)}
+.rt.n{background:var(--ok-soft)}.rt.l{background:var(--low-soft)}.rt.h{background:var(--high-soft)}.rt.x{background:var(--note-soft)}
+.gsec{display:grid;gap:8px;margin-bottom:20px}
+.gh{font-size:13px;color:var(--accent);border-bottom:1px solid var(--line);padding-bottom:5px;margin:0}
+.tnm{font-family:var(--display);font-size:18px;font-weight:600;line-height:1.2;min-height:2.4em}
+.tlink{font:inherit;font-weight:700;color:var(--accent);background:none;border:0;padding:0;cursor:pointer;text-align:left;text-decoration:underline dotted;text-underline-offset:3px}
+@media (max-width:1100px){.lay{grid-template-columns:minmax(0,1fr) 330px}}
+@media (max-width:760px){#cside{position:static!important;display:block!important;max-height:none!important;box-shadow:none!important;border-radius:10px!important}#cside .x-close{display:none!important}}
+@media (max-width:760px){.lay{grid-template-columns:1fr}.side{position:fixed;left:0;right:0;bottom:0;top:auto;max-height:72vh;border-radius:14px 14px 0 0;z-index:30;box-shadow:0 -8px 30px rgba(0,0,0,.2);display:none}.side.open{display:block}.x-close{display:inline-block}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1 id="h-title"></h1>
+    <p class="sub" id="h-sub"></p>
+    <p class="save" id="save" role="status"></p>
+  </header>
+  <section class="tiles" id="tiles"></section>
+  <section class="attn" id="attn"></section>
+  <nav aria-label="Sections">
+    <a href="#results" data-v="results">Test results</a>
+    <a href="#questions" data-v="questions">Questions for doctors</a>
+    <a href="#care" data-v="care">Doctors and labs</a>
+    <a href="#map" data-v="map">Patterns map</a>
+  </nav>
+  <section id="v-questions"></section>
+  <section id="v-care" class="hide"></section>
+  <section id="v-map" class="hide"></section>
+  <section id="v-results" class="hide"></section>
+  <section id="v-tiles" class="hide"></section>
+  <section id="v-history" class="hide"></section>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script id="state" type="application/json">{"title": "Gaurav – Health Record", "subtitle": "Born August 31, 1995 · Results from MedPlus Hyderabad (2023 and 2025) · No primary care doctor in Madison yet. Last updated Nov 16, 2026.", "attention": ["\u003cb>Semen analysis not done.\u003c/b> It is the main male fertility test.", "\u003cb>Borderline treadmill stress test (Dec 2025).\u003c/b> Needs follow-up with a doctor in Madison.", "\u003cb>Lipoprotein(a) 112.4\u003c/b> (limit 30) and \u003cb>LDL 117\u003c/b> (goal under 100). Higher heart risk.", "\u003cb>Morning cortisol 3.70\u003c/b> at 8:00 a.m. Low for that time of day.", "\u003cb>Folate, iron and magnesium\u003c/b> slightly low."], "dates": ["Mar 2023", "Dec 2025"], "tests": [{"group": "Hormones", "name": "Testosterone, total", "unit": "ng/dL", "explain": "Main male hormone. Matters for sperm and energy.", "range": "197–670", "values": [{"d": "Dec 2025", "v": "375", "f": "n"}]}, {"group": "Hormones", "name": "Testosterone, free", "unit": "ng/dL", "explain": "The active part of testosterone.", "range": "4.7–24.4", "values": [{"d": "Dec 2025", "v": "8.24", "f": "n"}]}, {"group": "Hormones", "name": "SHBG", "unit": "nmol/L", "explain": "Protein that carries sex hormones in the blood.", "range": "32.4–128", "values": [{"d": "Dec 2025", "v": "29.9", "f": "l"}]}, {"group": "Hormones", "name": "FSH", "unit": "mIU/mL", "explain": "Tells the testes to make sperm.", "range": "1.5–12.4", "values": [{"d": "Dec 2025", "v": "3.24", "f": "n"}]}, {"group": "Hormones", "name": "LH", "unit": "mIU/mL", "explain": "Tells the testes to make testosterone.", "range": "1.7–8.6", "values": [{"d": "Dec 2025", "v": "5.71", "f": "n"}]}, {"group": "Hormones", "name": "Estradiol", "unit": "pg/mL", "explain": "Estrogen. Men make a little.", "range": "Normal for a man", "values": [{"d": "Dec 2025", "v": "17.7", "f": "n"}]}, {"group": "Hormones", "name": "Prolactin", "unit": "ng/mL", "explain": "High levels can lower sperm and libido.", "range": "2.1–17.7", "values": [{"d": "Dec 2025", "v": "7.61", "f": "n"}]}, {"group": "Hormones", "name": "DHEA-S", "unit": "µg/dL", "explain": "Hormone from the adrenal glands.", "range": "80–560", "values": [{"d": "Dec 2025", "v": "316", "f": "n"}]}, {"group": "Hormones", "name": "Cortisol", "unit": "µg/dL", "explain": "Stress hormone. Drawn at 8:00 a.m., when it should be highest.", "range": "About 6–18 in the morning", "values": [{"d": "Dec 2025", "v": "3.70", "f": "l"}]}, {"group": "Hormones", "name": "IGF-1", "unit": "ng/mL", "explain": "Growth-related hormone. This lab's range looks unusually high for an adult.", "range": "220–972 (lab)", "values": [{"d": "Dec 2025", "v": "107", "f": "l"}]}, {"group": "Thyroid", "name": "TSH", "unit": "µIU/mL", "explain": "Main thyroid check.", "range": "0.27–4.20", "values": [{"d": "Dec 2025", "v": "2.93", "f": "n"}]}, {"group": "Thyroid", "name": "Free T3", "unit": "pg/mL", "explain": "Active thyroid hormone. Just below range.", "range": "2.66–4.33", "values": [{"d": "Dec 2025", "v": "2.58", "f": "l"}]}, {"group": "Blood sugar and insulin", "name": "HbA1c", "unit": "%", "explain": "Average blood sugar over about 3 months.", "range": "Under 5.7", "values": [{"d": "Dec 2025", "v": "5.1", "f": "n"}]}, {"group": "Blood sugar and insulin", "name": "Fasting glucose", "unit": "mg/dL", "explain": "Blood sugar before eating.", "range": "70–100", "values": [{"d": "Dec 2025", "v": "89", "f": "n"}]}, {"group": "Blood sugar and insulin", "name": "Fasting insulin", "unit": "mU/L", "explain": "Insulin before eating.", "range": "2.6–24.9", "values": [{"d": "Dec 2025", "v": "9.03", "f": "n"}]}, {"group": "Blood sugar and insulin", "name": "Insulin after a meal", "unit": "mIU/mL", "explain": "Insulin after eating.", "range": "12–82", "values": [{"d": "Dec 2025", "v": "32.8", "f": "n"}]}, {"group": "Vitamins, minerals and iron", "name": "Vitamin D", "unit": "ng/mL", "explain": "Bones, immunity and sperm health.", "range": "31–100", "values": [{"d": "Dec 2025", "v": "32.1", "f": "n"}]}, {"group": "Vitamins, minerals and iron", "name": "Vitamin B12", "unit": "pg/mL", "explain": "Nerves, energy and sperm health.", "range": "197–771", "values": [{"d": "Dec 2025", "v": "243", "f": "n"}]}, {"group": "Vitamins, minerals and iron", "name": "Folate (red cell)", "unit": "ng/mL", "explain": "Needed to make healthy sperm.", "range": "523–1257", "values": [{"d": "Dec 2025", "v": "500.9", "f": "l"}]}, {"group": "Vitamins, minerals and iron", "name": "Iron", "unit": "µg/dL", "explain": "Iron in the blood today.", "range": "70–180", "values": [{"d": "Dec 2025", "v": "58", "f": "l"}]}, {"group": "Vitamins, minerals and iron", "name": "Ferritin", "unit": "ng/mL", "explain": "Iron stores.", "range": "30–400", "values": [{"d": "Dec 2025", "v": "97.8", "f": "n"}]}, {"group": "Vitamins, minerals and iron", "name": "Transferrin saturation", "unit": "%", "explain": "How full the iron carrier is.", "range": "15–50", "values": [{"d": "Dec 2025", "v": "19.3", "f": "n"}]}, {"group": "Vitamins, minerals and iron", "name": "Magnesium", "unit": "mg/dL", "explain": "Muscles, nerves and heart rhythm.", "range": "1.8–2.6", "values": [{"d": "Dec 2025", "v": "1.7", "f": "l"}]}, {"group": "Vitamins, minerals and iron", "name": "Zinc", "unit": "µg/dL", "explain": "Important for sperm.", "range": "70–120", "values": [{"d": "Dec 2025", "v": "72.63", "f": "n"}]}, {"group": "Vitamins, minerals and iron", "name": "Homocysteine", "unit": "µmol/L", "explain": "High levels link to heart risk and low folate.", "range": "3.7–13.9", "values": [{"d": "Dec 2025", "v": "11.9", "f": "n"}]}, {"group": "Blood count", "name": "Hemoglobin", "unit": "g/dL", "explain": "Oxygen carrier in red blood cells.", "range": "13–17", "values": [{"d": "Mar 2023", "v": "15.6", "f": "n"}, {"d": "Dec 2025", "v": "14.2", "f": "n"}]}, {"group": "Blood count", "name": "Hematocrit", "unit": "%", "explain": "Share of blood made of red cells.", "range": "40–50", "values": [{"d": "Mar 2023", "v": "44.7", "f": "n"}, {"d": "Dec 2025", "v": "38.9", "f": "l"}]}, {"group": "Blood count", "name": "MCHC", "unit": "g/dL", "explain": "Hemoglobin concentration in red cells.", "range": "31.5–34.5", "values": [{"d": "Mar 2023", "v": "34.9", "f": "h"}, {"d": "Dec 2025", "v": "36.5", "f": "h"}]}, {"group": "Blood count", "name": "Lymphocytes", "unit": "%", "explain": "A type of white blood cell. High on both tests.", "range": "20–40", "values": [{"d": "Mar 2023", "v": "44.8", "f": "h"}, {"d": "Dec 2025", "v": "47.4", "f": "h"}]}, {"group": "Blood count", "name": "Platelets", "unit": "lakhs/cumm", "explain": "Help blood clot.", "range": "1.5–4.0", "values": [{"d": "Mar 2023", "v": "2.51", "f": "n"}, {"d": "Dec 2025", "v": "2.19", "f": "n"}]}, {"group": "Blood count", "name": "ESR", "unit": "mm/hr", "explain": "General inflammation sign.", "range": "0–10", "values": [{"d": "Mar 2023", "v": "2", "f": "n"}, {"d": "Dec 2025", "v": "2", "f": "n"}]}, {"group": "Blood count", "name": "APTT (clotting time)", "unit": "seconds", "explain": "How long blood takes to clot.", "range": "25–34", "values": [{"d": "Mar 2023", "v": "34.9", "f": "h"}]}, {"group": "Heart and cholesterol", "name": "Total cholesterol", "unit": "mg/dL", "explain": "All cholesterol together.", "range": "Under 200", "values": [{"d": "Dec 2025", "v": "181", "f": "n"}]}, {"group": "Heart and cholesterol", "name": "LDL cholesterol", "unit": "mg/dL", "explain": "The 'bad' cholesterol.", "range": "Under 100", "values": [{"d": "Dec 2025", "v": "117", "f": "h"}]}, {"group": "Heart and cholesterol", "name": "HDL cholesterol", "unit": "mg/dL", "explain": "The 'good' cholesterol. Higher is better.", "range": "40 or more", "values": [{"d": "Dec 2025", "v": "51", "f": "n"}]}, {"group": "Heart and cholesterol", "name": "Triglycerides", "unit": "mg/dL", "explain": "Fat in the blood.", "range": "Under 150", "values": [{"d": "Dec 2025", "v": "66", "f": "n"}]}, {"group": "Heart and cholesterol", "name": "Lipoprotein(a)", "unit": "mg/dL", "explain": "Inherited cholesterol type that raises heart risk. Usually stays the same for life.", "range": "Under 30", "values": [{"d": "Dec 2025", "v": "112.4", "f": "h"}]}, {"group": "Heart and cholesterol", "name": "hsCRP", "unit": "mg/L", "explain": "Inflammation linked to heart risk.", "range": "0–1", "values": [{"d": "Mar 2023", "v": "0.60 (CRP)", "f": "n"}, {"d": "Dec 2025", "v": "1.46", "f": "h"}]}, {"group": "Heart and cholesterol", "name": "NT-proBNP", "unit": "pg/mL", "explain": "Heart strain marker.", "range": "0–125", "values": [{"d": "Dec 2025", "v": "53.5", "f": "n"}]}, {"group": "Heart and cholesterol", "name": "Troponin I", "unit": "pg/mL", "explain": "Heart muscle damage marker.", "range": "0–58", "values": [{"d": "Dec 2025", "v": "\u003c2.50", "f": "n"}]}, {"group": "Liver and kidney", "name": "ALT (liver)", "unit": "IU/L", "explain": "Liver enzyme.", "range": "0–40", "values": [{"d": "Mar 2023", "v": "26", "f": "n"}, {"d": "Dec 2025", "v": "13", "f": "n"}]}, {"group": "Liver and kidney", "name": "AST (liver)", "unit": "IU/L", "explain": "Liver enzyme.", "range": "0–42", "values": [{"d": "Mar 2023", "v": "27", "f": "n"}, {"d": "Dec 2025", "v": "18", "f": "n"}]}, {"group": "Liver and kidney", "name": "Creatinine (kidney)", "unit": "mg/dL", "explain": "Kidney filter check.", "range": "0.67–1.17", "values": [{"d": "Dec 2025", "v": "0.87", "f": "n"}]}, {"group": "Liver and kidney", "name": "Total protein", "unit": "g/dL", "explain": "Proteins in the blood.", "range": "6.6–8.3", "values": [{"d": "Dec 2025", "v": "6.4", "f": "l"}]}, {"group": "Liver and kidney", "name": "Urine sodium", "unit": "mmol/L", "explain": "Salt in the urine. Can reflect a salty diet.", "range": "25–145", "values": [{"d": "Dec 2025", "v": "200", "f": "h"}]}, {"group": "Other", "name": "H. pylori antibody", "unit": "", "explain": "Stomach bacteria.", "range": "Negative", "values": [{"d": "Dec 2025", "v": "Negative", "f": "n"}]}], "questions": [{"id": "q0", "doctor": "Gaurav's primary care doctor", "priority": true, "q": "Can you order a semen analysis?", "why": "It is the main male fertility test, and it has never been done.", "status": "open", "answer": "", "date": ""}, {"id": "q1", "doctor": "Gaurav's primary care doctor", "priority": true, "q": "What should we do about my borderline treadmill stress test?", "why": "The Dec 2025 stress test was borderline for reduced blood flow to the heart during exercise.", "status": "open", "answer": "", "date": ""}, {"id": "q2", "doctor": "Gaurav's primary care doctor", "priority": true, "q": "What does my lipoprotein(a) of 112 mean for my heart risk?", "why": "Lp(a) is an inherited cholesterol type that raises heart risk; the limit is 30.", "status": "open", "answer": "", "date": ""}, {"id": "q3", "doctor": "Gaurav's primary care doctor", "priority": true, "q": "Why was my morning cortisol low, and should it be retested?", "why": "Cortisol was 3.70 at 8:00 a.m., when it should be at its highest (about 6–18).", "status": "open", "answer": "", "date": ""}, {"id": "q4", "doctor": "Gaurav's primary care doctor", "priority": true, "q": "Do I need treatment for my LDL cholesterol?", "why": "LDL was 117 (goal under 100), and high Lp(a) makes LDL more important to lower.", "status": "open", "answer": "", "date": ""}, {"id": "q5", "doctor": "Gaurav's primary care doctor", "priority": true, "q": "Should I take folate before we try for a baby?", "why": "Red cell folate was 500.9 (normal from 523), and folate is needed to make healthy sperm.", "status": "open", "answer": "", "date": ""}, {"id": "q6", "doctor": "Gaurav's primary care doctor", "priority": true, "q": "Why are my iron and magnesium low?", "why": "Iron was 58 (normal from 70) and magnesium 1.7 (normal from 1.8) in Dec 2025.", "status": "open", "answer": "", "date": ""}, {"id": "q7", "doctor": "Gaurav's primary care doctor", "priority": true, "q": "Should my high lymphocyte count be checked?", "why": "Lymphocytes were high on both tests: 44.8% in 2023 and 47.4% in 2025 (normal up to 40%).", "status": "open", "answer": "", "date": ""}, {"id": "q8", "doctor": "Gaurav's primary care doctor", "priority": true, "q": "Is my slightly low free T3 a thyroid problem?", "why": "Free T3 was 2.58, just below the 2.66 lower limit, with a normal TSH.", "status": "open", "answer": "", "date": ""}, {"id": "q9", "doctor": "Gaurav's primary care doctor", "priority": true, "q": "Does my hsCRP of 1.46 add to my heart risk?", "why": "hsCRP measures inflammation linked to heart disease; it was above 1 alongside high Lp(a).", "status": "open", "answer": "", "date": ""}, {"id": "q11", "doctor": "Fertility specialist", "priority": true, "q": "Can I do my semen analysis and blood tests through your couples clinic?", "why": "UW Health Fertility Care checks both partners, which could avoid a separate appointment.", "status": "open", "answer": "", "date": ""}, {"id": "q12", "doctor": "Fertility specialist", "priority": true, "q": "Should we have genetic carrier screening as a couple?", "why": "It checks whether we both carry a gene for conditions such as thalassemia, which is more common in South Asian families.", "status": "open", "answer": "", "date": ""}, {"id": "q13", "doctor": "Fertility specialist", "priority": true, "q": "Do I need infection screening before treatment?", "why": "Fertility clinics require HIV, hepatitis B, hepatitis C and syphilis tests for both partners before treatment.", "status": "open", "answer": "", "date": ""}, {"id": "g-pft", "doctor": "Gaurav's primary care doctor", "priority": true, "q": "My 2023 lung function test report only says 'test done'. Should I repeat it?", "why": "No result was recorded for the Mar 2023 lung function test, which was done during a chest workup.", "status": "open", "answer": "", "date": ""}, {"id": "g-why2023", "doctor": "Gaurav's primary care doctor", "priority": true, "q": "I had a chest CT, sputum TB culture and cancer-cell test in 2023. Do my symptoms then need any follow-up now?", "why": "A full chest workup was done in Mar 2023; the reason and any lasting symptoms should be on record with a US doctor.", "status": "open", "answer": "", "date": ""}, {"id": "g-ecg", "doctor": "Gaurav's primary care doctor", "priority": true, "q": "My ECG showed sinus arrhythmia. Is that normal?", "why": "The Dec 2025 ECG read normal sinus rhythm with sinus arrhythmia, a heart-rate change with breathing that is usually harmless.", "status": "open", "answer": "", "date": ""}, {"id": "g-borderline", "doctor": "Gaurav's primary care doctor", "priority": true, "q": "My vitamin D, B12, zinc and homocysteine were all near the edge of normal. Should I supplement or recheck?", "why": "Dec 2025: vitamin D 32.1 (low end 31), B12 243 (low end 197), zinc 72.6 (low end 70), homocysteine 11.9 (top 13.9); these also matter for sperm health.", "status": "open", "answer": "", "date": ""}, {"id": "g-shbg", "doctor": "Gaurav's primary care doctor", "priority": true, "q": "My SHBG was low. Does it matter for my testosterone or blood sugar?", "why": "SHBG was 29.9 in Dec 2025, below the 32.4–128 range; low SHBG can go with insulin resistance.", "status": "open", "answer": "", "date": ""}, {"id": "g-igf", "doctor": "Gaurav's primary care doctor", "priority": true, "q": "My IGF-1 was low (107). Does it need a repeat with a US lab?", "why": "IGF-1 was below the lab's 220–972 range in Dec 2025, though that range looks high for adults.", "status": "open", "answer": "", "date": ""}, {"id": "g-rbc", "doctor": "Gaurav's primary care doctor", "priority": true, "q": "My hematocrit was low and MCHC high. Is this linked to my low iron and folate?", "why": "Hematocrit was 38.9 (normal 40–50) in Dec 2025, and MCHC was high in both 2023 (34.9) and 2025 (36.5).", "status": "open", "answer": "", "date": ""}, {"id": "g-protein", "doctor": "Gaurav's primary care doctor", "priority": true, "q": "Why was my total blood protein low?", "why": "Total protein was 6.4 in Dec 2025 (normal 6.6–8.3).", "status": "open", "answer": "", "date": ""}, {"id": "g-sodium", "doctor": "Gaurav's primary care doctor", "priority": true, "q": "My urine sodium was high. Should my salt intake or blood pressure be checked?", "why": "Urine sodium was 200 in Dec 2025 (normal 25–145); with high Lp(a), blood pressure matters more.", "status": "open", "answer": "", "date": ""}, {"id": "g-aptt", "doctor": "Gaurav's primary care doctor", "priority": true, "q": "My clotting time (APTT) was slightly long in 2023. Should it be rechecked?", "why": "APTT was 34.9 seconds in Mar 2023, just above the 25–34 range.", "status": "open", "answer": "", "date": ""}], "history": [{"d": "Mar 2023", "t": "Chest CT", "x": "Minimal scarring in the right middle lobe. The rest was normal."}, {"d": "Mar 2023", "t": "Sputum tests", "x": "No TB growth after 6 weeks. No cancer cells."}, {"d": "Mar 2023", "t": "Lung function test", "x": "Done in Hyderabad."}, {"d": "Dec 5, 2025", "t": "Treadmill stress test", "x": "Borderline for reduced blood flow to the heart during exercise."}, {"d": "Dec 5, 2025", "t": "ECG and echocardiogram", "x": "ECG normal (normal heart-rate variation with breathing). Echo normal, pumping strength 65%."}, {"d": "Dec 5, 2025", "t": "Full blood tests in Hyderabad", "x": "Drawn at 8:00 a.m. Lp(a) high, cortisol low, folate and iron low."}], "pending": ["Find a primary care doctor in Madison", "Semen analysis", "Follow-up on the borderline stress test and Lp(a)", "Sign up for Maven (Amazon fertility benefit)"], "graph": {"center": "Gaurav", "conditions": [{"id": "heart", "label": "Early heart artery narrowing"}, {"id": "lpa", "label": "Inherited high Lp(a)"}, {"id": "adr", "label": "Adrenal glands underworking"}, {"id": "pit", "label": "Pituitary hormone issue"}, {"id": "ir", "label": "Insulin resistance"}, {"id": "abs", "label": "Low intake or poor absorption"}, {"id": "lung", "label": "Healed past lung infection"}, {"id": "tb", "label": "Latent TB"}, {"id": "vir", "label": "Lingering viral infection"}, {"id": "clot", "label": "Clotting factor issue"}, {"id": "salt", "label": "High salt intake"}, {"id": "sperm", "label": "Unknown sperm health"}], "findings": [{"label": "Borderline treadmill test", "flag": "high", "links": ["heart"]}, {"label": "Lp(a) 112", "flag": "high", "links": ["lpa", "heart"]}, {"label": "LDL 117", "flag": "high", "links": ["heart", "lpa"]}, {"label": "hsCRP 1.46", "flag": "high", "links": ["heart", "vir"]}, {"label": "Cortisol 3.70 at 8 a.m.", "flag": "low", "links": ["adr", "pit"]}, {"label": "IGF-1 low-normal", "flag": "low", "links": ["pit", "abs"]}, {"label": "Free T3 just low", "flag": "low", "links": ["pit", "abs"]}, {"label": "SHBG low", "flag": "low", "links": ["ir"]}, {"label": "Iron, folate low", "flag": "low", "links": ["abs"]}, {"label": "Magnesium, protein low", "flag": "low", "links": ["abs"]}, {"label": "Hematocrit low", "flag": "low", "links": ["abs"]}, {"label": "Lymphocytes high twice", "flag": "high", "links": ["vir"]}, {"label": "Clotting time long (2023)", "flag": "high", "links": ["clot"]}, {"label": "CT scarring, wide airways", "flag": "note", "links": ["lung", "tb"]}, {"label": "Small chest lymph nodes", "flag": "note", "links": ["lung", "tb", "vir"]}, {"label": "Grew up in India", "flag": "note", "links": ["tb"]}, {"label": "Urine sodium high", "flag": "high", "links": ["salt", "heart"]}, {"label": "No semen analysis yet", "flag": "note", "links": ["sperm"]}]}, "patterns": [{"t": "1. Heart and blood vessels", "tests": ["Total cholesterol", "LDL cholesterol", "HDL cholesterol", "Triglycerides", "Lipoprotein(a)", "hsCRP", "Homocysteine", "NT-proBNP", "Troponin I"], "f": ["Treadmill test borderline for reduced blood flow (Dec 2025)", "Lp(a) 112.4 (limit 30), LDL 117", "hsCRP 1.46 (above 1)", "Echo normal; ECG sinus arrhythmia"], "p": ["Early narrowing of heart arteries", "Inherited high Lp(a)", "False-positive treadmill test"], "k": ["Cardiologist review; stress echo or coronary CT scan", "Fasting lipid panel, blood pressure"]}, {"t": "2. Lungs and chest", "tests": [], "f": ["2023 CT: scarring and slightly widened airways, right middle lobe", "Small lymph nodes in the middle of the chest", "TB and cancer-cell tests negative", "Lung function result missing"], "p": ["Healed past infection", "Mild airway widening", "Reactive lymph nodes"], "k": ["Repeat lung function test", "Lung specialist review of the 2023 CT"]}, {"t": "3. Stress hormone and energy", "tests": ["Cortisol", "IGF-1", "Free T3", "TSH", "SHBG", "DHEA-S"], "f": ["Cortisol 3.70 at 8 a.m. (expected about 6–18)", "IGF-1 107: likely low-normal on US age-based ranges (the lab's 220–972 range looks like a teen range)", "Free T3 just low, SHBG low"], "p": ["Adrenal glands underworking", "Pituitary hormone issue", "Stress or sleep effect"], "k": ["Repeat 8 a.m. cortisol with ACTH", "ACTH stimulation test; endocrinologist"]}, {"t": "4. Blood and nutrients", "tests": ["Iron", "Ferritin", "Transferrin saturation", "Folate (red cell)", "Vitamin B12", "Vitamin D", "Zinc", "Magnesium", "Total protein", "Hemoglobin", "Hematocrit", "MCHC"], "f": ["Iron 58, folate low, magnesium low, protein low", "Hematocrit low; MCHC high in 2023 and 2025", "Vitamin D, B12, zinc near low edge; homocysteine near top"], "p": ["Low intake", "Poor absorption, such as celiac"], "k": ["Celiac blood test, iron panel", "Dietitian review"]}, {"t": "5. Immune cells and clotting", "tests": ["Lymphocytes", "Platelets", "ESR", "APTT (clotting time)"], "f": ["Lymphocytes high twice: 44.8% (2023), 47.4% (2025)", "Clotting time (APTT) just long in 2023"], "p": ["Lingering viral infection", "Lab variation", "Blood cell disorder"], "k": ["Repeat blood count with a smear", "Repeat clotting tests"]}, {"t": "6. Fertility, kidneys and salt", "tests": ["Testosterone, total", "Testosterone, free", "FSH", "LH", "Estradiol", "Prolactin", "Creatinine (kidney)", "Urine sodium"], "f": ["No semen analysis yet", "Testosterone normal", "Urine sodium 200 (high)"], "p": ["Unknown sperm health", "High salt intake"], "k": ["Semen analysis", "Blood pressure check"]}], "care": [{"name": "Dr. Bala Bhagavath, MD", "role": "Fertility specialist", "place": "UW Health Fertility Care, 2365 Deming Way, Middleton, WI 53562", "phone": "608-824-6160", "network": "In network", "checked": "Nov 10, 2026 (Premera search)", "status": "Accepting new patients", "note": "Program director. Speaks Tamil and English."}, {"name": "Primary care doctor (to choose)", "role": "Primary care", "place": "Madison", "phone": "", "network": "Not checked", "checked": "", "status": "Needed", "note": "Needed for the semen analysis, stress test follow-up and Lp(a)."}], "labs": [{"name": "UW Health University Hospital", "role": "Hospital lab (walk-in)", "place": "600 Highland Ave, Madison, WI 53792", "phone": "608-262-2221", "network": "In network", "checked": "Nov 10, 2026 (Premera search)", "status": "Walk-in blood draws", "note": "Ask whether any test is sent to an outside lab, and which one."}, {"name": "UW Health clinic labs (UW Medical Foundation)", "role": "Clinic labs", "place": "75+ UW Health clinics, e.g. Junction Rd Medical Center, 451 Junction Rd", "phone": "608-232-3171", "network": "In network", "checked": "Nov 10, 2026 (Premera search)", "status": "Smaller clinics may need an appointment", "note": ""}, {"name": "Meriter Laboratories (UnityPoint Health – Meriter)", "role": "Lab", "place": "36 S Brooks St, Madison, WI 53715", "phone": "608-417-3868", "network": "In network", "checked": "Nov 10, 2026 (Premera search)", "status": "", "note": ""}, {"name": "Labcorp", "role": "Lab", "place": "2102 Wright St, Madison, WI 53704", "phone": "608-765-1996", "network": "In network", "checked": "Nov 10, 2026 (Premera search)", "status": "Evening or weekend hours", "note": "Gaurav had a Labcorp claim on Nov 24, 2025."}]}</script>
+<script>
+const SRC = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+let S = JSON.parse(document.getElementById("state").textContent);
+let qFilter = "all", qDoc = "all", onlyFlag = false, ART = null, timer = null;
+const $ = (id) => document.getElementById(id);
+const esc = (t) => String(t ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const FL = {l:"LOW", h:"HIGH", x:"CHECK", n:""};
+
+function today(){ const d=new Date(); return d.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}); }
+
+function setSave(msg){ $("save").textContent = msg; }
+function save(){
+  clearTimeout(timer);
+  if(!ART){ setSave("Changes are shown here but can't be saved in this view."); return; }
+  setSave("Saving…");
+  timer = setTimeout(async () => {
+    const json = JSON.stringify(S).replace(/</g,"\\u003c");
+    const html = SRC.replace(/(<script id="state" type="application\/json">)[\s\S]*?(<\/script>)/, (m,a,b) => a + json + b);
+    try { await ART.publish(html); setSave("Saved."); }
+    catch(e){ setSave("Couldn't save (" + (e && (e.code||e.message) || "error") + "). Your change shows here but wasn't kept."); }
+  }, 1200);
+}
+
+function header(){
+  $("h-title").textContent = S.title;
+  $("h-sub").textContent = S.subtitle;
+  const open = S.questions.filter(q=>q.status==="open").length;
+  const asked = S.questions.filter(q=>q.status==="asked").length;
+  const ans = S.questions.filter(q=>q.status==="answered").length;
+  let flagged = 0; S.tests.forEach(t=>{ const last=t.values[t.values.length-1]; if(last && last.f!=="n") flagged++; });
+  $("tiles").innerHTML = [
+    [open,"questions still to ask"],[asked,"asked, waiting for an answer"],[ans,"answered"],[flagged,"results out of range at last test"]
+  ].map(([n,l])=>`<div class="tile"><b>${n}</b><span>${l}</span></div>`).join("");
+  $("attn").innerHTML = `<h2>What needs attention</h2><ul>${S.attention.map(a=>`<li>${a}</li>`).join("")}</ul>`;
+}
+
+function questions(){
+  const docs = [...new Set(S.questions.map(q=>q.doctor))];
+  const list = S.questions.filter(q => !QMAP[q.id] && (qFilter==="all"||q.status===qFilter) && (qDoc==="all"||q.doctor===qDoc)).sort((a,b)=>docs.indexOf(a.doctor)-docs.indexOf(b.doctor));
+  const fb = (v,l) => `<button class="chip" data-qf="${v}" aria-pressed="${qFilter===v}">${l}</button>`;
+  const db = (v,l) => `<button class="chip" data-qd="${esc(v)}" aria-pressed="${qDoc===v}">${esc(l)}</button>`;
+  $("v-questions").innerHTML = `
+  <div style="display:grid;gap:14px">
+    <p class="note" style="font-size:14px">Questions about a specific test result are in the Test results tab, next to that test. The ones here are not tied to one result.</p>
+    <div class="bar">${fb("all","All")}${fb("open","To ask")}${fb("asked","Asked")}${fb("answered","Answered")}</div>
+    <div class="bar">${db("all","Every doctor")}${docs.map(d=>db(d,d)).join("")}</div>
+    <div class="list">${list.map(q=>`
+      <article class="q ${q.status}" data-id="${q.id}">
+        <div class="top"><span class="tag">${esc(q.doctor)}</span>${q.date?`<span class="note">Asked ${esc(q.date)}</span>`:''}</div>
+        <div class="ques">${esc(q.q)}</div>${q.list?`<ul class="qchk">${q.list.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}
+        <p class="why"><b>Why:</b> ${esc(q.why)}</p>
+        <div class="status">
+          <button class="s-open" data-s="open" aria-pressed="${q.status==="open"}">To ask</button>
+          <button class="s-asked" data-s="asked" aria-pressed="${q.status==="asked"}">Asked</button>
+          <button class="s-answered" data-s="answered" aria-pressed="${q.status==="answered"}">Answered</button>
+        </div>
+      </article>`).join("") || '<p class="note">No questions match these filters.</p>'}
+    </div>
+    <form class="card" id="addq">
+      <h2>Add a question</h2>
+      <div class="form">
+        <label for="nq-q" style="grid-column:1/-1">Question<input id="nq-q" required></label>
+        <label for="nq-why" style="grid-column:1/-1">Why it matters (one line)<input id="nq-why" required></label>
+        <label for="nq-doc">Doctor<input id="nq-doc" list="docs" value="${esc(docs[0]||"")}" required></label>
+        <datalist id="docs">${docs.map(d=>`<option value="${esc(d)}">`).join("")}</datalist>
+        <button class="btn" type="submit">Add question</button>
+      </div>
+    </form>
+  </div>`;
+}
+
+const CNOTE = {};
+function results(){
+  const dates = S.dates;
+  let rows = "", grp = null;
+  const GO = GROUPS.map(x=>x[0]), gi = g => { const k = GO.indexOf(g); return k<0 ? 999 : k; };
+  const ALL = S.tests.concat(EXTRA_ORD.map(([n,w,g])=>({name:n, unit:"", explain:w, range:"", group:g, values:[], extra:true})));
+  ALL.sort((a,b)=>gi(a.group)-gi(b.group));
+  ALL.forEach((t,i) => {
+    const last = t.values[t.values.length-1];
+    if(onlyFlag && !t.values.some(v=>v.f!=="n")) return;
+    if(rGroup!=="all" && t.group!==rGroup) return;
+    if(t.group!==grp){ grp=t.group; rows += `<tr class="grp"><td colspan="${dates.length+5}">${esc(grp)}</td></tr>`; }
+    const cells = dates.map(d => { const v=t.values.find(x=>x.d===d); const cn=(CNOTE[t.name]||{})[d]; return v?`<td class="v ${v.f}">${esc(v.v)}${FL[v.f]?`<span class="fl">${FL[v.f]}</span>`:''}${cn?`<small class="cday">${esc(cn)}</small>`:''}</td>`:'<td class="v" style="color:var(--muted)">–</td>'; }).join("");
+    const w = worst(t);
+    rows += `<tr><td class="tcell ${w}"><button class="tbtn" data-open="${esc(t.name)}" ${t.extra?'disabled':''}><span class="tnm2">${esc(t.name)}</span>${t.unit?`<span class="tun">${esc(t.unit)}</span>`:''}</button><small>${esc(t.explain)}</small></td><td class="rng">${esc(t.range)}</td><td class="barc">${t.values.length ? `<div class="big">${spec(t,true,true)}</div>` : '<span class="note">Not done yet</span>'}</td>${cells}<td class="ord">${(t.extra||ORD[t.name])?`<span class="yes" aria-label="Ordered">✓</span><small>${esc(ORD[t.name]||"")}</small>`:'<span class="no" aria-label="Not ordered">✗</span>'}</td>${qcell(t.name)}</tr>`;
+  });
+  $("v-results").innerHTML = `
+  <div style="display:grid;gap:14px">
+    <div class="bar">
+      <button class="chip" id="flagtoggle" aria-pressed="${onlyFlag}">Only show tests that were ever out of range</button>
+    </div>
+    <div class="legend"><span><i style="background:var(--low-soft);border:1px solid var(--low)"></i>Low</span><span><i style="background:var(--high-soft);border:1px solid var(--high)"></i>High</span><span><i style="background:var(--note-soft);border:1px solid var(--note)"></i>Can't be read as is</span><span><i style="background:var(--ok-soft);border:1px solid var(--ok)"></i>In range</span><span><i style="background:var(--zl);width:22px;height:8px;border-radius:4px"></i>Low zone</span><span><i style="background:var(--zn);width:22px;height:8px;border-radius:4px"></i>Normal zone</span><span><i style="background:var(--zh);width:22px;height:8px;border-radius:4px"></i>High zone</span><span><i style="background:var(--ink);width:4px;height:14px;border-radius:2px"></i>Latest result</span><span><i style="background:var(--ink);opacity:.35;width:4px;height:14px;border-radius:2px"></i>Earlier results</span><span>Click a test name for the full explanation.</span></div>
+    <style>
+     #v-results td.tcell{min-width:190px;border-left:4px solid var(--ok);background:var(--ok-soft)}
+     #v-results td.tcell.l{border-left-color:var(--low);background:var(--low-soft)}#v-results td.tcell.h{border-left-color:var(--high);background:var(--high-soft)}#v-results td.tcell.x{border-left-color:var(--note);background:var(--note-soft)}
+     #v-results .tbtn{font:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:left;color:var(--ink);display:block}
+     #v-results .tbtn:disabled{cursor:default}
+     #v-results .tbtn:not(:disabled):hover .tnm2{text-decoration:underline;text-underline-offset:4px}
+     #v-results .tnm2{font-family:var(--display);font-size:21px;font-weight:600;line-height:1.15;display:block}
+     #v-results .tun{font-size:12px;color:var(--muted)}
+     #v-results td.tcell small{display:block;color:var(--muted);font-size:12px;margin-top:4px;max-width:30ch}
+     #v-results td.barc{min-width:240px;padding-top:16px}
+     #v-results .side{position:fixed;top:12px;right:12px;bottom:12px;left:auto;width:min(440px,94vw);max-height:none;z-index:40;box-shadow:0 10px 40px rgba(0,0,0,.25);display:none;border-radius:12px}
+     #v-results .side.open{display:block}
+     #v-results .x-close{display:inline-block}
+    </style>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Test</th><th>Normal range</th><th>Results on the range</th>${dates.map(d=>`<th>${esc(d)}</th>`).join("")}<th>Labs ordered now</th><th>Questions to ask</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div><aside class="side" id="tside" aria-live="polite"></aside>
+    <form class="card" id="addr">
+      <h2>Add a new result</h2>
+      <p class="note">Pick an existing test, or type a new name. New dates become a new column.</p>
+      <div class="form">
+        <label for="nr-test">Test<input id="nr-test" list="tests" required></label>
+        <datalist id="tests">${S.tests.map(t=>`<option value="${esc(t.name)}">`).join("")}</datalist>
+        <label for="nr-date">Date (e.g. Jan 2027)<input id="nr-date" required></label>
+        <label for="nr-val">Result<input id="nr-val" required></label>
+        <label for="nr-flag">Compared with range<select id="nr-flag"><option value="n">In range</option><option value="l">Low</option><option value="h">High</option><option value="x">Can't be read as is</option></select></label>
+        <label for="nr-range">Normal range (new tests)<input id="nr-range"></label>
+        <button class="btn" type="submit">Add result</button>
+      </div>
+    </form>
+  </div>`;
+}
+
+function history(){
+  $("v-history").innerHTML = `
+  <div style="display:grid;gap:14px">
+    <div class="tl">${S.history.map(h=>`<div><time>${esc(h.d)}</time><span><p><b>${esc(h.t)}</b></p><p class="d">${esc(h.x)}</p></span></div>`).join("")}</div>
+    ${S.pending.length?`<div class="card"><h2>Ordered, not done yet</h2><ul style="margin:0;padding-left:20px;display:grid;gap:4px">${S.pending.map(p=>`<li>${esc(p)}</li>`).join("")}</ul></div>`:''}
+    <form class="card" id="addh">
+      <h2>Add to history</h2>
+      <div class="form">
+        <label for="nh-d">Date<input id="nh-d" required></label>
+        <label for="nh-t">What happened<input id="nh-t" required></label>
+        <label for="nh-x" style="grid-column:1/-1">Details<input id="nh-x"></label>
+        <button class="btn" type="submit">Add</button>
+      </div>
+    </form>
+  </div>`;
+}
+
+function netClass(n){ return /^in network/i.test(n)?"ok":/not in|out of/i.test(n)?"high":"low"; }
+function careRank(p){ const r = p.role||""; if(/Primary care/i.test(r)) return 0; if(/Fertility specialist · #1|Fertility specialist · #1/.test(r)) return 1; if(/OB\/GYN|Gynecology/.test(r)){ const m = r.match(/#(\d)/); return m ? 10 + (+m[1]) : 20; } if(/Fertility/.test(r)) return 30; return 40; }
+function care(){
+  S.care.sort((a,b)=>careRank(a)-careRank(b));
+  const card = (p,i,kind) => `
+    <div class="q ${netClass(p.network)==="ok"?"answered":netClass(p.network)==="high"?"":"open"}" style="${netClass(p.network)==="high"?"border-left-color:var(--high)":""}">
+      <div class="top"><span class="tag">${esc(p.role)}</span>
+        <span class="tag" style="background:var(--${netClass(p.network)}-soft);color:var(--${netClass(p.network)})">${esc(p.network)}</span>
+        ${p.status?`<span class="tag" style="background:var(--note-soft);color:var(--note)">${esc(p.status)}</span>`:''}</div>
+      <div class="ques">${esc(p.name)}</div>
+      <p class="why">${esc(p.place)}${p.phone?` · ${esc(p.phone)}`:''}</p>
+      <p class="note">Network checked: ${esc(p.checked||"not yet")}</p>
+      <div class="status">
+        <button data-net="${kind}:${i}:In network">Mark in network</button>
+        <button data-net="${kind}:${i}:Not in network">Mark not in network</button>
+        <button data-net="${kind}:${i}:Not checked">Mark not checked</button>
+      </div>
+    </div>`;
+  $("v-care").innerHTML = `
+  <div style="display:grid;gap:14px">
+    <div class="card">
+      <h2>Check the network before every new doctor or lab</h2>
+      <p class="note" style="font-size:14px">This page can't log in to Premera on its own. Network status below is what was checked on the date shown. Before booking, search the doctor on Premera, or call the BlueCard provider line on the back of the card: <b>800-676-2583</b>. Then mark the result here.</p>
+      <div class="bar"><a class="btn" href="https://member.premera.com/find-a-doctor">Open Premera doctor search</a><a class="btn ghost" href="https://www.uwhealth.org/fertility">UW Health Fertility Care</a></div>
+    </div>
+    <h2>Doctors</h2>
+    <div class="list">${S.care.map((p,i)=>card(p,i,"care")).join("")}</div>
+    <h2>Labs</h2>
+    <div class="list">${S.labs.map((p,i)=>card(p,i,"labs")).join("")}</div>
+    <form class="card" id="addc">
+      <h2>Add a doctor or lab</h2>
+      <div class="form">
+        <label for="nc-name">Name<input id="nc-name" required></label>
+        <label for="nc-role">Type (e.g. OB/GYN, Lab)<input id="nc-role" required></label>
+        <label for="nc-place">Address<input id="nc-place"></label>
+        <label for="nc-phone">Phone<input id="nc-phone"></label>
+        <label for="nc-net">Premera network<select id="nc-net"><option>Not checked</option><option>In network</option><option>Not in network</option></select></label>
+        <label for="nc-kind">Add to<select id="nc-kind"><option value="care">Doctors</option><option value="labs">Labs</option></select></label>
+        <button class="btn" type="submit">Add</button>
+      </div>
+    </form>
+  </div>`;
+}
+function show(){
+  const V = ["results","questions","care","map"];
+  const v = (location.hash||"#results").slice(1);
+  const view = V.includes(v)?v:"results";
+  V.forEach(n => $("v-"+n).classList.toggle("hide", n!==view));
+  document.querySelectorAll("nav a").forEach(a => a.setAttribute("aria-current", a.dataset.v===view?"page":"false"));
+}
+function net3(){
+  if(!S.graph) return '';
+  if(!window.d3) return net();
+  return `<div class="card"><h2>Linked map</h2><div class="cidx"><div><b>Dots</b><span><i class="dot" style="background:var(--low)"></i>Low result</span><span><i class="dot" style="background:var(--high)"></i>High result</span><span><i class="dot" style="background:var(--note)"></i>Can't be read alone, or history</span></div><div><b>Circles</b><span><i class="ring"></i>Possible condition. The number is how many of your findings point to it. Bigger and faster pulsing means more support.</span></div><div><b>Lines</b><span><svg width="44" height="10" aria-hidden="true"><line x1="3" y1="5" x2="41" y2="5" stroke="#0f6e74" stroke-width="4" stroke-linecap="round"/></svg>Strong: the finding points to only 1 or 2 possibilities</span><span><svg width="44" height="10" aria-hidden="true"><line x1="3" y1="5" x2="41" y2="5" stroke="#0f6e74" stroke-width="2.4" stroke-dasharray="1 7" stroke-linecap="round"/></svg>Weak: the finding fits 3 or more possibilities, like tiredness</span><span><svg width="44" height="10" aria-hidden="true"><line x1="3" y1="5" x2="41" y2="5" stroke="#9aa3ab" stroke-width="1.8" stroke-dasharray="10 8"/></svg>No link yet: a question or test to answer</span><span><svg width="44" height="10" aria-hidden="true"><line x1="3" y1="5" x2="41" y2="5" stroke="#8a6100" stroke-width="3" stroke-dasharray="2 6" stroke-linecap="round" opacity=".6"/></svg>Two possibilities that share findings</span></div><div><b>Grey dots</b><span>Questions (?) and tests (T) that could strengthen a link. Click one to answer; a yes adds it to your map.</span></div><div style="flex-wrap:nowrap"><b>Click</b><span style="flex:1">Click on large circles for related symptoms and possible health diagnosis combination. The map flies in so every name is readable, and the details appear below the map. Click empty space to fly back out. Pinch, or hold Ctrl and scroll, to zoom; drag the background to move around.</span></div></div><div class="bar" style="margin:10px 0 0"><button class="chip" id="flabtog" aria-pressed="false">Show all finding names</button><button class="chip" id="motog" aria-pressed="false">Pause motion</button><button class="chip" id="zin">+ Zoom in</button><button class="chip" id="zout">− Zoom out</button><button class="chip" id="zreset">Reset view</button></div><div id="netbox"></div></div>`;
+}
+function drawNet(){
+  const box = document.getElementById('netbox'); if(!box || !window.d3 || !S.graph) return;
+  if(window.__sim) window.__sim.stop(); if(window.__raf) cancelAnimationFrame(window.__raf);
+  box.innerHTML = '';
+  const g = S.graph, F = g.findings;
+  const pal = ['#0f6e74','#b4540a','#5b5fa8','#b3261e','#2e7d4f','#8a4fa3','#c27c0e','#2b6cb0','#a23b72','#4d7c0f','#6b5b4b','#0e7490'];
+  const deg = {}; F.forEach(f=>f.links.forEach(id=>deg[id]=(deg[id]||0)+1));
+  const C = g.conditions.filter(c=>deg[c.id]);
+  const maxd = Math.max(1, ...C.map(c=>deg[c.id]));
+  const nodes = [], links = [], cmap = {};
+  const wrapL = s => { const L = []; let cur = ''; s.split(' ').forEach(x=>{ if((cur+' '+x).trim().length>20 && cur){ L.push(cur); cur = x; } else cur = (cur+' '+x).trim(); }); if(cur) L.push(cur); return L; };
+  C.forEach((c,j)=>{ const n = {id:'c_'+c.id, t:'k', cid:c.id, label:c.label, col:pal[j%pal.length], d:deg[c.id], r:16+24*Math.sqrt(deg[c.id]/maxd)}; n.lines = wrapL(`${c.label} · ${deg[c.id]}`); n.lw = Math.max(...n.lines.map(x=>x.length)); nodes.push(n); cmap[c.id] = n; });
+  F.forEach((f,i)=>{ const ls = f.links.filter(id=>cmap[id]); nodes.push({id:'f'+i, t:'f', i, label:f.label, flag:f.flag, n:ls.length});
+    ls.forEach(id=>links.push({source:'f'+i, target:'c_'+id, kind:'x', cid:id, fi:i, w:cmap[id].d, spec:ls.length})); });
+  const pair = {};
+  F.forEach(f=>{ const ls = f.links.filter(id=>cmap[id]); for(let a=0;a<ls.length;a++) for(let b=a+1;b<ls.length;b++){ const k=[ls[a],ls[b]].sort().join('|'); pair[k]=(pair[k]||0)+1; } });
+  Object.entries(pair).forEach(([k,v])=>{ const [a,b]=k.split('|'); links.push({source:'c_'+a, target:'c_'+b, kind:'s', w:v}); });
+  const maxs = Math.max(1, ...links.filter(l=>l.kind==='s').map(l=>l.w));
+  if(!g.probes) g.probes = [];
+  PROBES.forEach(p=>{ if(!g.probes.some(x=>x.id===p.id)) g.probes.push(Object.assign({status:'open'}, p)); });
+  const OP = g.probes.filter(p=>p.status==='open' && p.links.some(id=>cmap[id]));
+  OP.forEach(p=>{ nodes.push({id:'p_'+p.id, t:'p', pid:p.id, label:p.label, kind:p.kind}); p.links.filter(id=>cmap[id]).forEach(id=>links.push({source:'p_'+p.id, target:'c_'+id, kind:'p', w:1})); });
+  const sim = d3.forceSimulation(nodes)
+    .force('link', d3.forceLink(links).id(d=>d.id)
+      .distance(l=>l.kind==='s' ? 420-160*l.w/maxs : l.kind==='p' ? 170 : 240-80*l.w/maxd)
+      .strength(l=>l.kind==='s' ? 0.04+0.2*l.w/maxs : l.kind==='p' ? 0.12 : 0.12+0.5*l.w/maxd))
+    .force('charge', d3.forceManyBody().strength(d=>d.t==='k' ? -3600 : -380).distanceMax(900))
+    .force('collide', d3.forceCollide(d=>d.t==='k' ? Math.max(d.r+70, d.lw*8.5) : 24).iterations(4))
+    .force('x', d3.forceX(0).strength(0.025)).force('y', d3.forceY(0).strength(0.035)).stop();
+  for(let k=0;k<600;k++) sim.tick();
+  const xs = nodes.map(n=>n.x), ys = nodes.map(n=>n.y), pad = 210;
+  const x0 = Math.min(...xs)-pad, y0 = Math.min(...ys)-pad, W = Math.max(...xs)-Math.min(...xs)+2*pad, H = Math.max(...ys)-Math.min(...ys)+2*pad;
+  nodes.forEach((n,k)=>{ n.bx = n.x; n.by = n.y; n.ph = k*1.7; });
+  const svg = d3.select(box).append('svg').attr('viewBox', `${x0.toFixed(0)} ${y0.toFixed(0)} ${W.toFixed(0)} ${H.toFixed(0)}`).attr('width','100%')
+    .attr('role','img').attr('aria-label','Moving network: your findings linked to possible conditions; stronger links are thicker')
+    .style('display','block').style('font-family','var(--body)').style('touch-action','none');
+  const fl0 = svg.append('defs').append('filter').attr('id','nglow').attr('x','-50%').attr('y','-50%').attr('width','200%').attr('height','200%');
+  fl0.append('feGaussianBlur').attr('stdDeviation',5).attr('result','b');
+  const mg = fl0.append('feMerge'); mg.append('feMergeNode').attr('in','b'); mg.append('feMergeNode').attr('in','SourceGraphic');
+  const halo = s => s.style('paint-order','stroke').style('stroke','var(--panel)').style('stroke-width','5px').style('stroke-linejoin','round').style('pointer-events','none');
+  svg.append('rect').attr('x',x0).attr('y',y0).attr('width',W).attr('height',H).style('fill','transparent');
+  const root = svg.append('g');
+  const SL = links.filter(l=>l.kind==='s'), XL = links.filter(l=>l.kind==='x'), PL = links.filter(l=>l.kind==='p');
+  const synOp = l => 0.10+0.45*l.w/maxs, lkOp = l => l.spec<=2 ? 0.6+0.35*l.w/maxd : 0.5;
+  const syn = root.append('g').selectAll('line').data(SL).join('line').style('stroke','var(--note)').style('stroke-linecap','round')
+    .style('stroke-width', l=>1+6*l.w/maxs).style('opacity', synOp).style('stroke-dasharray','2 6');
+  const pl = root.append('g').selectAll('line').data(PL).join('line').style('stroke','#7a838b').style('stroke-width',1.8).style('stroke-dasharray','10 8').style('opacity',0.7);
+  const lk = root.append('g').selectAll('line').data(XL).join('line').attr('class','lk').attr('data-f', l=>l.fi).attr('data-c', l=>l.cid)
+    .style('stroke', l=>cmap[l.cid].col).style('stroke-width', l=>l.spec<=2 ? 3+2.5*l.w/maxd : 2.2).style('stroke-dasharray', l=>l.spec<=2 ? null : '1 7').style('opacity', lkOp).style('stroke-linecap','round');
+  XL.forEach((l,k)=>{ l.ph = (k*0.137)%1; l.sp = 0.05+0.22*l.w/maxd; });
+  const parts = root.append('g').selectAll('circle').data(XL).join('circle').attr('r', l=>l.spec<=2 ? 2.4+2.4*l.w/maxd : 1.4)
+    .style('fill', l=>cmap[l.cid].col).style('pointer-events','none');
+  const pn = root.append('g').selectAll('g').data(nodes.filter(n=>n.t==='p')).join('g').attr('class','pnd').style('cursor','pointer');
+  pn.append('circle').attr('r',17).style('fill','#dfe3e7').style('stroke','#3a4148').style('stroke-width',2.5);
+  pn.append('text').text(d=>d.kind==='test'?'T':'?').attr('text-anchor','middle').attr('dy','0.35em').attr('font-size',21).attr('font-weight',800).style('fill','#1f2428').style('pointer-events','none');
+  const plab = pn.append('text').text(d=>d.label).attr('text-anchor','middle').attr('dy',-14).attr('font-size',18).style('fill','#3f474e').call(halo).style('opacity',0);
+  pn.on('mouseenter', function(){ d3.select(this).select('text:last-of-type').style('opacity',1); })
+    .on('mouseleave', function(){ if(!showAll) d3.select(this).select('text:last-of-type').style('opacity',0); })
+    .on('click', (e,d)=>probePanel(d.pid, cmap));
+  const nd = root.append('g').selectAll('g').data(nodes.filter(n=>n.t!=='p')).join('g').attr('class','nd')
+    .attr('data-f', d=>d.t==='f'?d.i:null).attr('data-c', d=>d.t==='k'?d.cid:null).style('cursor','pointer');
+  const ring = nd.filter(d=>d.t==='k').append('circle').attr('r', d=>d.r).style('fill','none').style('stroke', d=>d.col).style('stroke-width',2).style('pointer-events','none');
+  nd.append('circle').attr('r', d=>d.t==='k' ? d.r : 4+1.6*d.n)
+    .style('fill', d=>d.t==='k' ? d.col : `var(--${d.flag||'low'})`).style('fill-opacity', d=>d.t==='k' ? 0.22 : 1)
+    .style('stroke', d=>d.t==='k' ? d.col : 'var(--panel)').style('stroke-width', d=>d.t==='k' ? 2.5 : 1.5)
+    .attr('filter', d=>d.t==='k' && d.d >= 0.5*maxd ? 'url(#nglow)' : null);
+  nd.filter(d=>d.t==='k').append('text').attr('text-anchor','middle').attr('y', d=>d.r+28).each(function(d){ const tx = d3.select(this); d.lines.forEach((ln,i)=>tx.append('tspan').attr('x',0).attr('dy', i ? '1.1em' : 0).text(ln)); })
+    .attr('font-size',27).attr('font-weight',700).style('fill', d=>d.col).call(halo);
+  let showAll = false, sel = null, zk = 1;
+  const flab = nd.filter(d=>d.t==='f').append('text').text(d=>d.label).attr('text-anchor','middle').attr('dy',-12)
+    .attr('font-size',20).style('fill','var(--ink)').call(halo).style('opacity',0);
+  const touches = (l,d) => l.source.id===d.id || l.target.id===d.id;
+  function focus(d){
+    if(!d){ nd.style('opacity',1); lk.style('opacity', lkOp); syn.style('opacity', synOp); parts.style('opacity',1); flab.style('opacity', (showAll||zk>2)?1:0); plab.style('opacity', (showAll||zk>2)?1:0); pn.style('opacity',1); pl.style('opacity',0.7); return; }
+    const on = new Set([d.id]); XL.forEach(l=>{ if(touches(l,d)){ on.add(l.source.id); on.add(l.target.id); } });
+    nd.style('opacity', n=>on.has(n.id)?1:0.1);
+    lk.style('opacity', l=>touches(l,d)?0.95:0.03); parts.style('opacity', l=>touches(l,d)?1:0);
+    syn.style('opacity', l=>touches(l,d)?0.8:0.03); flab.style('opacity', n=>on.has(n.id)?1:0);
+    pl.style('opacity', l=>touches(l,d)?0.9:0.04); pn.style('opacity', n=>PL.some(l=>touches(l,d)&&l.source.id===n.id)?1:0.1); plab.style('opacity', n=>PL.some(l=>touches(l,d)&&l.source.id===n.id)?1:0);
+  }
+  nd.on('mouseenter', (e,d)=>focus(d)).on('mouseleave', ()=>focus(sel))
+    .on('click', (e,d)=>{ sel = (sel && sel.id===d.id) ? null : d; setTimeout(()=>focus(sel), 0); if(d.t==='k' || !sel) zoomTo(sel); });
+  const tog = document.getElementById('flabtog');
+  if(tog) tog.onclick = () => { showAll = !showAll; tog.setAttribute('aria-pressed', showAll); tog.textContent = showAll ? 'Hide finding names' : 'Show all finding names'; focus(sel); };
+  nd.call(d3.drag().on('drag', (e,d)=>{ d.bx += e.dx; d.by += e.dy; if(paused||reduce) frame(performance.now()); }));
+  const zoom = d3.zoom().scaleExtent([0.6, 6])
+    .filter(e => e.type==='wheel' ? (e.ctrlKey || e.metaKey) : !e.button)
+    .on('zoom', e => { root.attr('transform', e.transform); const was = zk > 2; zk = e.transform.k; if(!sel && (zk > 2) !== was) focus(null); });
+  svg.call(zoom).on('dblclick.zoom', null);
+  function zoomTo(d){
+    if(!d){ svg.transition().duration(900).ease(d3.easeCubicInOut).call(zoom.transform, d3.zoomIdentity); return; }
+    const ids = new Set([d.id]); links.forEach(l=>{ if(l.kind!=='s' && (l.source.id===d.id || l.target.id===d.id)){ ids.add(l.source.id); ids.add(l.target.id); } });
+    const pts = nodes.filter(n=>ids.has(n.id)), mx = d3.extent(pts, n=>n.bx), my = d3.extent(pts, n=>n.by);
+    const bw = Math.max(420, mx[1]-mx[0]+420), bh = Math.max(360, my[1]-my[0]+260);
+    const k = Math.max(1, Math.min(4, 0.95*Math.min(W/bw, H/bh)));
+    const tf = d3.zoomIdentity.translate(x0+W/2, y0+H/2).scale(k).translate(-(mx[0]+mx[1])/2, -(my[0]+my[1])/2);
+    svg.transition().duration(1100).ease(d3.easeCubicInOut).call(zoom.transform, tf);
+  }
+  svg.on('click', e => { if(e.target.tagName==='rect' || e.target===svg.node()){ sel = null; focus(null); zoomTo(null); } });
+  const zb = (id, f) => { const b = document.getElementById(id); if(b) b.onclick = f; };
+  zb('zin', () => svg.transition().duration(400).call(zoom.scaleBy, 1.6));
+  zb('zout', () => svg.transition().duration(400).call(zoom.scaleBy, 1/1.6));
+  zb('zreset', () => { sel = null; focus(null); zoomTo(null); });
+  const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const t0 = performance.now(); let paused = false, tp = 0;
+  const mo = document.getElementById('motog');
+  if(mo) mo.onclick = () => { paused = !paused; mo.setAttribute('aria-pressed', paused); mo.textContent = paused ? 'Play motion' : 'Pause motion'; };
+  function frame(now){
+    if(!paused) tp = (now-t0)/1000; const t = reduce ? 0 : tp;
+    nodes.forEach(n=>{ n.x = n.bx; n.y = n.by;
+      if(n.t==='k') n.p = reduce ? 0.5 : ((t*(0.12+0.35*n.d/maxd) + n.ph) % 1); });
+    lk.attr('x1',l=>l.source.x).attr('y1',l=>l.source.y).attr('x2',l=>l.target.x).attr('y2',l=>l.target.y);
+    pl.attr('x1',l=>l.source.x).attr('y1',l=>l.source.y).attr('x2',l=>l.target.x).attr('y2',l=>l.target.y);
+    pn.attr('transform', d=>`translate(${d.x.toFixed(1)},${d.y.toFixed(1)})`);
+    syn.attr('x1',l=>l.source.x).attr('y1',l=>l.source.y).attr('x2',l=>l.target.x).attr('y2',l=>l.target.y);
+    parts.attr('cx', l=>{ const p=(l.ph+t*l.sp)%1; return l.source.x+(l.target.x-l.source.x)*p; })
+         .attr('cy', l=>{ const p=(l.ph+t*l.sp)%1; return l.source.y+(l.target.y-l.source.y)*p; });
+    ring.attr('r', d=>d.r + d.p*(10+22*d.d/maxd)).style('stroke-opacity', d=>reduce ? 0 : 0.7*(1-d.p));
+    nd.attr('transform', d=>`translate(${d.x.toFixed(1)},${d.y.toFixed(1)})`);
+    if(!reduce) window.__raf = requestAnimationFrame(frame);
+  }
+  frame(performance.now());
+}
+
+const PROBES = [];
+function probePanel(pid, cmap){
+  const p = (S.graph.probes||[]).find(x=>x.id===pid), side = document.getElementById('cside'); if(!p || !side) return;
+  const cs = p.links.map(id=>(S.graph.conditions.find(c=>c.id===id)||{}).label).filter(Boolean), T = p.kind==='test';
+  side.innerHTML = `<button class="chip x-close" data-close="cside">Close</button><h2>${esc(p.label)}</h2><span class="pill x">${T?'Test that could confirm':'Question for you'}</span>
+   <div class="blk"><h3>${T?'Has this been done, and was it abnormal?':'Do you have this?'}</h3><p>${esc(p.q)}</p></div>
+   <div class="blk"><h3>A yes strengthens</h3><ul>${cs.map(c=>`<li>${esc(c)}</li>`).join('')}</ul></div>
+   <div class="bar"><button class="btn" data-pq="${p.id}" data-pa="yes">${T?'Done, abnormal':'Yes'}</button>${T?'':`<button class="btn ghost" data-pq="${p.id}" data-pa="sometimes">Sometimes</button><button class="btn ghost" data-pq="${p.id}" data-pa="rarely">Rarely</button>`}<button class="btn ghost" data-pq="${p.id}" data-pa="no">${T?'Done, normal':'No'}</button><button class="chip" data-pq="${p.id}" data-pa="open">${T?'Not done yet':'Not sure'}</button></div>`;
+  side.classList.add('open'); side.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+document.addEventListener('click', (e) => {
+  const b = e.target.closest && e.target.closest('[data-pq]'); if(!b) return;
+  const p = (S.graph.probes||[]).find(x=>x.id===b.dataset.pq); if(!p) return;
+  p.status = b.dataset.pa;
+  S.graph.findings = S.graph.findings.filter(f=>f.probe!==p.id);
+  if(p.status==='yes') S.graph.findings.push({label: p.label + (p.kind==='test' ? ' (abnormal)' : ''), flag:'note', links:p.links.slice(), probe:p.id});
+  if(p.status==='sometimes' || p.status==='rarely') S.graph.findings.push({label: p.label + ' (' + p.status + ')', flag:'note', links:p.links.slice(), probe:p.id});
+  save(); drawNet();
+  const side = document.getElementById('cside');
+  if(side) side.innerHTML = `<button class="chip x-close" data-close="cside">Close</button><h2>${esc(p.label)}</h2><p>${p.status==='yes'?'Added to your map. The links it points to are now stronger.':p.status==='sometimes'?'Added to your map as "sometimes".':p.status==='rarely'?'Added to your map as "rarely".':p.status==='no'?'Noted as no. It is off the map.':'Left open. It stays on the map as a grey dot.'}</p>`;
+});
+function drawNetOld(){
+  const box = document.getElementById('netbox'); if(!box || !window.d3 || !S.graph) return;
+  if(window.__sim) window.__sim.stop();
+  const g = S.graph, F = g.findings, C = g.conditions, W = 1400, H = 1400;
+  const pal = ['#0f6e74','#b4540a','#5b5fa8','#b3261e','#2e7d4f','#8a4fa3','#c27c0e','#2b6cb0','#a23b72','#4d7c0f','#6b5b4b','#0e7490'];
+  const deg = {}; F.forEach(f=>f.links.forEach(id=>deg[id]=(deg[id]||0)+1));
+  const nodes = [{id:'__c', t:'c', label:g.center, fx:0, fy:0}];
+  F.forEach((f,i)=>nodes.push({id:'f'+i, t:'f', i, label:f.label, flag:f.flag}));
+  C.forEach((c,j)=>nodes.push({id:'c_'+c.id, t:'k', cid:c.id, label:c.label, col:pal[j%pal.length], r:12+3*(deg[c.id]||0)}));
+  const colOf = id => (nodes.find(n=>n.cid===id)||{}).col;
+  const links = [];
+  F.forEach((f,i)=>{ links.push({source:'__c', target:'f'+i, kind:'hub'}); f.links.forEach(id=>{ if(C.some(c=>c.id===id)) links.push({source:'f'+i, target:'c_'+id, kind:'x', cid:id, fi:i}); }); });
+  const svg = d3.select(box).append('svg').attr('viewBox', `${-W/2} ${-H/2} ${W} ${H}`).attr('width','100%').attr('role','img').attr('aria-label','Interactive network linking findings to possible conditions')
+    .style('max-width','1000px').style('display','block').style('margin','0 auto').style('font-family','var(--body)').style('touch-action','none');
+  const lk = svg.append('g').selectAll('line').data(links).join('line')
+    .attr('class', d=>d.kind==='hub'?null:'lk').attr('data-f', d=>d.kind==='hub'?null:d.fi).attr('data-c', d=>d.kind==='hub'?null:d.cid)
+    .style('stroke', d=>d.kind==='hub'?'var(--line)':colOf(d.cid)).style('stroke-width', d=>d.kind==='hub'?1.2:1.5).style('opacity', d=>d.kind==='hub'?1:.45);
+  const nd = svg.append('g').selectAll('g').data(nodes).join('g')
+    .attr('class', d=>d.t==='c'?null:'nd').attr('data-f', d=>d.t==='f'?d.i:null).attr('data-c', d=>d.t==='k'?d.cid:null).style('cursor','grab');
+  nd.append('circle').attr('r', d=>d.t==='c'?64:d.t==='f'?8:d.r)
+    .style('fill', d=>d.t==='c'?'var(--accent-soft)':d.t==='f'?`var(--${d.flag||'low'})`:d.col).style('fill-opacity', d=>d.t==='k'?.18:1)
+    .style('stroke', d=>d.t==='c'?'var(--accent)':d.t==='k'?d.col:'none').style('stroke-width',2);
+  nd.append('text').text(d=>d.label).attr('text-anchor','middle').attr('dy', d=>d.t==='c'?'0.35em':d.t==='f'?22:d.r+18)
+    .attr('font-size', d=>d.t==='c'?24:d.t==='f'?14:16).attr('font-weight', d=>d.t==='f'?400:600)
+    .style('fill', d=>d.t==='c'?'var(--accent)':d.t==='f'?'var(--ink)':d.col)
+    .style('paint-order','stroke').style('stroke','var(--panel)').style('stroke-width','5px').style('stroke-linejoin','round').style('pointer-events','none');
+  const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let t = 0;
+  const drift = () => { t += 0.01; nodes.forEach((n,k)=>{ if(n.fx!=null) return; n.vx += Math.sin(t+k)*0.035; n.vy += Math.cos(t*0.9+k*1.3)*0.035; }); };
+  const sim = d3.forceSimulation(nodes)
+    .force('link', d3.forceLink(links).id(d=>d.id).distance(l=>l.kind==='hub'?190:130).strength(l=>l.kind==='hub'?0.25:0.6))
+    .force('charge', d3.forceManyBody().strength(-520))
+    .force('collide', d3.forceCollide(d=>d.t==='c'?80:Math.max(d.r||8, d.label.length*4.3)+10))
+    .force('x', d3.forceX(0).strength(0.03)).force('y', d3.forceY(0).strength(0.05));
+  sim.force('charge', d3.forceManyBody().strength(-900)); sim.force('link').distance(l=>l.kind==='hub'?280:160);
+  sim.stop(); for(let k=0;k<400;k++) sim.tick();
+  sim.force('drift', reduce ? null : drift);
+  const clamp = () => nodes.forEach(n=>{ const m = Math.max(70, (n.label||'').length*(n.t==='k'?4.8:4.4)+12); n.x = Math.max(-W/2+m, Math.min(W/2-m, n.x)); n.y = Math.max(-H/2+30+(n.t==='k'?n.r:0), Math.min(H/2-(n.t==='k'?n.r+34:40), n.y)); });
+  const draw = () => { clamp(); lk.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y).attr('x2',d=>d.target.x).attr('y2',d=>d.target.y); nd.attr('transform', d=>`translate(${d.x},${d.y})`); };
+  sim.on('tick', draw); draw();
+  sim.alphaTarget(reduce ? 0 : 0.02).alpha(reduce ? 0 : 0.1).restart();
+  nd.call(d3.drag()
+    .on('start', (e,d)=>{ if(!e.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
+    .on('drag', (e,d)=>{ d.fx = e.x; d.fy = e.y; })
+    .on('end', (e,d)=>{ if(!e.active) sim.alphaTarget(reduce ? 0 : 0.02); if(d.t!=='c'){ d.fx = null; d.fy = null; } }));
+  window.__sim = sim;
+}
+function net2(){
+  const g = S.graph; if(!g) return '';
+  if(!window.d3) return net();
+  const F = g.findings, C = g.conditions;
+  const pal = ['#0f6e74','#b4540a','#5b5fa8','#b3261e','#2e7d4f','#8a4fa3','#c27c0e','#2b6cb0','#a23b72','#4d7c0f','#6b5b4b','#0e7490'];
+  const deg = {}; F.forEach(f=>f.links.forEach(id=>deg[id]=(deg[id]||0)+1));
+  const nodes = [{id:'__c', t:'c', label:g.center, fx:0, fy:0}];
+  F.forEach((f,i)=>nodes.push({id:'f'+i, t:'f', i, label:f.label, flag:f.flag}));
+  C.forEach((c,j)=>nodes.push({id:'c_'+c.id, t:'k', cid:c.id, label:c.label, col:pal[j%pal.length], r:12+3*(deg[c.id]||0)}));
+  const links = [];
+  F.forEach((f,i)=>{ links.push({source:'__c', target:'f'+i, kind:'hub'}); f.links.forEach(id=>{ if(C.some(c=>c.id===id)) links.push({source:'f'+i, target:'c_'+id, kind:'x', cid:id, fi:i}); }); });
+  const sim = d3.forceSimulation(nodes)
+    .force('link', d3.forceLink(links).id(d=>d.id).distance(l=>l.kind==='hub'?190:130).strength(l=>l.kind==='hub'?0.25:0.6))
+    .force('charge', d3.forceManyBody().strength(-520))
+    .force('collide', d3.forceCollide(d=>d.t==='c'?80:Math.max(d.r||8, d.label.length*4.3)+10))
+    .force('x', d3.forceX(0).strength(0.03)).force('y', d3.forceY(0).strength(0.05)).stop();
+  for(let k=0;k<500;k++) sim.tick();
+  const xs = nodes.map(n=>n.x), ys = nodes.map(n=>n.y), pad = 150;
+  const x0 = Math.min(...xs)-pad, y0 = Math.min(...ys)-pad, w = Math.max(...xs)-Math.min(...xs)+2*pad, h = Math.max(...ys)-Math.min(...ys)+2*pad;
+  const halo = 'paint-order:stroke;stroke:var(--panel);stroke-width:5px;stroke-linejoin:round';
+  const colOf = id => (nodes.find(n=>n.cid===id)||{}).col;
+  let s = `<svg viewBox="${x0.toFixed(0)} ${y0.toFixed(0)} ${w.toFixed(0)} ${h.toFixed(0)}" width="100%" role="img" aria-label="Network linking findings to possible conditions" style="max-width:1000px;display:block;margin:0 auto;font-family:var(--body)">`;
+  links.forEach(l=>{ const a = l.source, b = l.target;
+    if(l.kind==='hub') s += `<line x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}" style="stroke:var(--line);stroke-width:1.2"/>`;
+    else s += `<line class="lk" data-f="${l.fi}" data-c="${l.cid}" x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}" style="stroke:${colOf(l.cid)};stroke-width:1.5;opacity:.45"/>`; });
+  nodes.forEach(n=>{
+    if(n.t==='c') s += `<circle cx="${n.x}" cy="${n.y}" r="64" style="fill:var(--accent-soft);stroke:var(--accent);stroke-width:2"/><text x="${n.x}" y="${n.y}" text-anchor="middle" dominant-baseline="central" font-size="24" font-weight="600" style="fill:var(--accent)">${esc(n.label)}</text>`;
+    else if(n.t==='f') s += `<g class="nd" data-f="${n.i}" style="cursor:pointer"><circle cx="${n.x.toFixed(1)}" cy="${n.y.toFixed(1)}" r="8" style="fill:var(--${n.flag||'low'})"/><text x="${n.x.toFixed(1)}" y="${(n.y+22).toFixed(1)}" text-anchor="middle" font-size="14" style="fill:var(--ink);${halo}">${esc(n.label)}</text></g>`;
+    else s += `<g class="nd" data-c="${n.cid}" style="cursor:pointer"><circle cx="${n.x.toFixed(1)}" cy="${n.y.toFixed(1)}" r="${n.r}" style="fill:${n.col};fill-opacity:.18;stroke:${n.col};stroke-width:2"/><text x="${n.x.toFixed(1)}" y="${(n.y+n.r+18).toFixed(1)}" text-anchor="middle" font-size="16" font-weight="600" style="fill:${n.col};${halo}">${esc(n.label)}</text></g>`; });
+  s += '</svg>';
+  return `<div class="card"><h2>Linked map</h2><p class="note" style="font-size:14px">Middle: ${esc(g.center)}. Small dots: abnormal findings (orange low, red high, blue can't be read alone). Large coloured circles: possible conditions to rule in or out with doctors; the bigger the circle, the more findings point to it. Tap any dot or circle to highlight its links; tap it again to clear.</p>${s}</div>`;
+}
+function net(){
+  const g = S.graph; if(!g) return '';
+  const F = g.findings, C = g.conditions, cx = 650, cy = 560, r1 = 230, r2 = 420;
+  const pos = (i,n,r,off) => { const a = -Math.PI/2 + (i+off)*2*Math.PI/n; return {x:cx+r*Math.cos(a), y:cy+r*Math.sin(a), c:Math.cos(a)}; };
+  const fp = F.map((f,i)=>pos(i,F.length,r1,0)), cp = C.map((c,i)=>pos(i,C.length,r2,0.5));
+  const ci = id => C.findIndex(c=>c.id===id);
+  const halo = 'paint-order:stroke;stroke:var(--panel);stroke-width:5px;stroke-linejoin:round';
+  let s = `<svg viewBox="0 0 1300 1120" width="100%" role="img" aria-label="Network linking findings to possible conditions" style="max-width:1000px;display:block;margin:0 auto;font-family:var(--body)">`;
+  fp.forEach(p=>{ s += `<line x1="${cx}" y1="${cy}" x2="${p.x.toFixed(1)}" y2="${p.y.toFixed(1)}" style="stroke:var(--line);stroke-width:1.5"/>`; });
+  F.forEach((f,i)=>f.links.forEach(id=>{ const j = ci(id); if(j<0) return; s += `<line class="lk" data-f="${i}" data-c="${id}" x1="${fp[i].x.toFixed(1)}" y1="${fp[i].y.toFixed(1)}" x2="${cp[j].x.toFixed(1)}" y2="${cp[j].y.toFixed(1)}" style="stroke:var(--accent);stroke-width:1.5;opacity:.45"/>`; }));
+  s += `<circle cx="${cx}" cy="${cy}" r="72" style="fill:var(--accent-soft);stroke:var(--accent);stroke-width:2"/><text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central" font-size="24" font-weight="600" style="fill:var(--accent)">${esc(g.center)}</text>`;
+  F.forEach((f,i)=>{ const p = fp[i], L = p.c >= -0.01; s += `<g class="nd" data-f="${i}" style="cursor:pointer"><circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="9" style="fill:var(--${f.flag||'low'})"/><text x="${(p.x+(L?14:-14)).toFixed(1)}" y="${p.y.toFixed(1)}" text-anchor="${L?'start':'end'}" dominant-baseline="central" font-size="15" style="fill:var(--ink);${halo}">${esc(f.label)}</text></g>`; });
+  C.forEach((c,j)=>{ const p = cp[j], L = p.c >= -0.01; s += `<g class="nd" data-c="${c.id}" style="cursor:pointer"><circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="12" style="fill:var(--note-soft);stroke:var(--note);stroke-width:2"/><text x="${(p.x+(L?18:-18)).toFixed(1)}" y="${p.y.toFixed(1)}" text-anchor="${L?'start':'end'}" dominant-baseline="central" font-size="16" font-weight="600" style="fill:var(--note);${halo}">${esc(c.label)}</text></g>`; });
+  s += '</svg>';
+  return `<div class="card"><h2>Linked map</h2><p class="note" style="font-size:14px">Middle: ${esc(g.center)}. Inner ring (coloured dots): abnormal findings – orange low, red high, blue can't be read alone. Outer ring (purple): possible conditions to rule in or out with doctors. Lines show which findings point to which possibility. Tap any dot to highlight its links; tap it again to clear.</p>${s}</div>`;
+}
+document.addEventListener('click', (e) => {
+  const n = e.target.closest && e.target.closest('.nd'); if(!n) return;
+  const f = n.dataset.f, c = n.dataset.c, on = !n.classList.contains('sel');
+  document.querySelectorAll('.nd.sel').forEach(x=>x.classList.remove('sel')); if(on) n.classList.add('sel');
+  document.querySelectorAll('.lk').forEach(l=>{ const hit = (f!==undefined && l.dataset.f===f) || (c!==undefined && l.dataset.c===c); l.style.opacity = !on ? '.45' : hit ? '1' : '.06'; l.style.strokeWidth = on && hit ? '3.5' : '1.5'; });
+});
+function trend(names){
+  if(!names||!names.length) return '<p class="note">No blood values for this pattern. See History and scans.</p>';
+  const col = (f) => f==='l'?'low':f==='h'?'high':f==='x'?'note':'ok';
+  return `<div class="note">Trend over time</div><div style="display:grid;gap:6px">${names.map(n=>{
+    const t = S.tests.find(x=>x.name===n); if(!t) return '';
+    const nums = t.values.map(v=>parseFloat(String(v.v).replace(/[,<]/g,''))).filter(x=>!isNaN(x));
+    let dir = 'one result', sp = '';
+    if(nums.length>1){ const a=nums[0], b=nums[nums.length-1]; dir = b>a*1.05?'rising':b<a*0.95?'falling':'steady';
+      const mn=Math.min(...nums), mx=Math.max(...nums), r=(mx-mn)||1;
+      sp = `<svg width="60" height="18" viewBox="0 0 60 18" aria-hidden="true" style="vertical-align:middle"><polyline fill="none" stroke="var(--accent)" stroke-width="1.5" points="${nums.map((y,i)=>`${(i*56/(nums.length-1)+2).toFixed(1)},${(16-(y-mn)/r*14).toFixed(1)}`).join(' ')}"/></svg>`; }
+    return `<div style="font-size:13px;border-top:1px solid var(--line);padding-top:6px"><b>${esc(t.name)}</b> <span class="note">normal ${esc(t.range)}</span> ${sp} <span class="note">${dir}</span><div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:3px">${t.values.map(v=>`<span class="tag" style="background:var(--${col(v.f)}-soft);color:var(--${col(v.f)})">${esc(v.d)}: ${esc(v.v)}${FL[v.f]?' '+FL[v.f]:''}</span>`).join('')}</div></div>`;
+  }).join('')}</div>`;
+}
+function map(){
+  const L = (a) => `<ul style="margin:0;padding-left:18px">${a.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`;
+  $("v-map").innerHTML = `<div style="display:grid;gap:14px"><p class="note" style="font-size:14px">Your abnormal results grouped into patterns. These are possibilities to rule in or out with your doctors, not diagnoses. Every finding has equal priority. Values are from MedPlus lab reports (Hyderabad, 2022–2025); normal ranges are as printed by that lab.</p>${net3()}<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px">${(S.patterns||[]).map(p=>`<div class="q" style="border-left-color:var(--accent)"><div class="ques">${esc(p.t)}</div><div class="note">Findings</div>${L(p.f)}${trend(p.tests)}<div class="note">Possibilities</div><div class="top">${p.p.map(x=>`<span class="tag">${esc(x)}</span>`).join("")}</div><div class="note">Tests that settle it</div>${L(p.k)}</div>`).join("")}</div></div>`;
+}
+const GROUPS = [["Hormones", ["Testosterone, total", "Testosterone, free", "SHBG", "FSH", "LH", "Estradiol", "Prolactin"]], ["Adrenal and growth hormones", ["DHEA-S", "Cortisol", "IGF-1"]], ["Thyroid", ["TSH", "Free T3"]], ["Blood sugar and insulin", ["HbA1c", "Fasting glucose", "Fasting insulin", "Insulin after a meal"]], ["Vitamins", ["Vitamin D", "Vitamin B12", "Folate (red cell)", "Homocysteine"]], ["Minerals", ["Magnesium", "Zinc"]], ["Iron", ["Iron", "Ferritin", "Transferrin saturation"]], ["Blood count", ["Hemoglobin", "Hematocrit", "MCHC", "Lymphocytes", "Platelets", "ESR", "APTT (clotting time)"]], ["Heart and cholesterol", ["Total cholesterol", "LDL cholesterol", "HDL cholesterol", "Triglycerides", "Lipoprotein(a)", "hsCRP", "NT-proBNP", "Troponin I"]], ["Liver and kidney", ["ALT (liver)", "AST (liver)", "Creatinine (kidney)", "Total protein", "Urine sodium"]], ["Other", ["H. pylori antibody"]]];
+const SYM = {"Testosterone, total": "T", "Testosterone, free": "fT", "SHBG": "SHBG", "FSH": "FSH", "LH": "LH", "Estradiol": "E2", "Prolactin": "PRL", "DHEA-S": "DHEA", "Cortisol": "Cort", "IGF-1": "IGF1", "TSH": "TSH", "Free T3": "fT3", "HbA1c": "A1c", "Fasting glucose": "Glu", "Fasting insulin": "Ins", "Insulin after a meal": "pIns", "Vitamin D": "D", "Vitamin B12": "B12", "Folate (red cell)": "Fol", "Homocysteine": "Hcy", "Magnesium": "Mg", "Zinc": "Zn", "Iron": "Fe", "Ferritin": "Fer", "Transferrin saturation": "TSat", "Hemoglobin": "Hb", "Hematocrit": "Hct", "MCHC": "MCHC", "Lymphocytes": "Lym", "Platelets": "Plt", "ESR": "ESR", "APTT (clotting time)": "APTT", "Total cholesterol": "TC", "LDL cholesterol": "LDL", "HDL cholesterol": "HDL", "Triglycerides": "TG", "Lipoprotein(a)": "Lp(a)", "hsCRP": "CRP", "NT-proBNP": "BNP", "Troponin I": "TnI", "ALT (liver)": "ALT", "AST (liver)": "AST", "Creatinine (kidney)": "Cr", "Total protein": "Prot", "Urine sodium": "uNa", "H. pylori antibody": "HP"};
+const ORD = {};
+const EXTRA_ORD = [];
+const DET = {"SHBG": {"c": ["ir"], "why": "Gaurav's SHBG was a little low while his free testosterone stayed normal. Low SHBG is linked to insulin resistance and a higher future risk of type 2 diabetes, so it may be an early clue about blood sugar control rather than a hormone problem.", "causes": ["Insulin resistance, where the body needs extra insulin to keep blood sugar normal", "Fatty liver", "Extra weight, especially around the waist", "Lab variation, since it was measured only once, or a naturally low level that runs in families"], "recheck": ["Repeat SHBG with total and free testosterone in the morning", "Fasting glucose, fasting insulin and HbA1c (3-month average blood sugar)", "Waist size, weight and blood pressure", "Liver tests or a liver ultrasound if the doctor suspects fatty liver"], "preg": ["Metabolic syndrome, which includes insulin resistance, is linked in studies to lower sperm counts, poorer sperm movement and more sperm DNA damage, so it is worth knowing about early.", "Sperm take roughly 2 to 3 months to form, so a semen analysis reflects Gaurav's health over the past few months.", "Testosterone pills, gels or shots should not be used to change hormone numbers while trying to conceive, because they shut down sperm making."]}, "Cortisol": {"c": ["adr", "pit"], "why": "A morning cortisol of 3.70 is low for 8:00 a.m. It could mean the adrenal glands, or the pituitary gland that signals them, are underworking. A single test can also be low for other reasons, so it needs a repeat.", "causes": ["Adrenal glands underworking (Addison's disease); in India, tuberculosis is a known cause", "Pituitary gland not sending enough ACTH (adrenocorticotropic hormone), the signal to the adrenal glands", "Recent or long-term steroid use, including creams, inhalers or joint injections", "A sleep schedule that runs late, such as shift work, so 8:00 a.m. was not his true morning", "Low blood protein, which makes total cortisol read lower"], "recheck": ["Repeat cortisol at 8:00 a.m. with ACTH drawn at the same time", "ACTH (cosyntropin) stimulation test, the standard test to confirm or rule out adrenal insufficiency", "Blood sodium, potassium, renin and aldosterone", "A list of every medicine, cream, inhaler and injection used in the past year", "Endocrinologist referral if the repeat is still low"], "preg": ["If Gaurav's cortisol is truly low, an ordinary illness can turn into an emergency called an adrenal crisis, so this is best settled before pregnancy and a newborn's first months.", "If he needs treatment for latent TB, the drug rifampin speeds up cortisol breakdown, so his cortisol status should be known first.", "His normal DHEA-S (316) is reassuring and worth showing the doctor."]}, "IGF-1": {"c": ["pit", "abs"], "why": "IGF-1 was flagged low only against a range that matches 14-year-old boys. Against adult ranges it is low-normal or just below normal, so it needs a repeat at a US lab before anyone reads much into it.", "causes": ["Wrong reference range on the report, which likely explains the flag", "Eating too little protein or too few calories", "Liver disease or poorly controlled diabetes (his liver tests and blood sugar were normal)", "Low thyroid", "Low growth hormone from the pituitary gland, which IGF-1 alone cannot diagnose"], "recheck": ["Repeat IGF-1 at a US lab that uses adult age-based ranges", "Use the same lab for any later repeats, because IGF-1 methods differ between labs", "If IGF-1 and cortisol both stay low, an endocrinologist can decide about pituitary testing"], "preg": ["The pituitary gland also drives sperm making through LH and FSH, and both of Gaurav's were normal in Dec 2025.", "Clearing up IGF-1 and cortisol together helps rule out a pituitary problem before trying to conceive."]}, "Free T3": {"c": ["pit", "abs"], "k": "t3", "why": "Free T3 was just below range while TSH was normal. This pattern usually reflects how the body was turning T4 into T3 at that moment, often because of eating less, illness or stress, rather than a thyroid disease.", "causes": ["Eating fewer calories or fasting", "A recent illness or inflammation", "Physical stress", "Lab-to-lab differences in range", "Rarely, a pituitary problem"], "recheck": ["Repeat TSH, free T4 and free T3 at a US lab when he is well and eating normally", "A look at recent diet and weight changes"], "preg": ["Taking thyroid hormone is not recommended for this pattern on its own.", "A normal repeat removes one open question before trying to conceive."]}, "Folate (red cell)": {"c": ["abs", "sperm"], "why": "Red cell folate was just under the MedPlus range but inside some US ranges. It is a borderline result, and worth a recheck because folate is needed to make sperm.", "causes": ["Low intake of leafy greens, beans, lentils and fortified grains", "Alcohol", "Smoking", "Poor absorption, such as celiac disease", "Lab range differences"], "recheck": ["Repeat red cell folate at a US lab", "Vitamin B12 and methylmalonic acid (MMA) at the same time", "Homocysteine", "Celiac blood test (tTG-IgA) if folate, iron and protein all stay low"], "preg": ["Folate helps copy DNA, and studies link folate in men with sperm quality, though the results are mixed.", "A large trial (FAZST) found that high-dose folic acid (5 mg) with zinc did not improve semen quality or birth rates, and men taking it had more sperm DNA damage, so more is not better.", "Food first, with any supplement dose agreed with his doctor, is the safer path.", "B12 should be checked first, because doctors treat a B12 shortage before giving folic acid.", "Sperm take roughly 2 to 3 months to form, so changes made now show up in sperm a few months later."]}, "Iron": {"c": ["abs"], "why": "Serum iron was low on the day of the test, but ferritin and transferrin saturation were normal. This looks like a day-to-day dip rather than an iron shortage.", "causes": ["Normal swings with time of day and meals", "A recent infection or inflammation, which holds iron back from the blood for a while", "Low iron in the diet", "Poor absorption, such as celiac disease"], "recheck": ["Repeat iron panel with ferritin and transferrin saturation, fasting, in the morning", "Full blood count", "Celiac blood test if iron, folate and protein all stay low"], "preg": ["Gaurav's iron stores look normal, so iron pills are not clearly needed.", "A recheck before any supplement avoids treating a number that may already be fine."]}, "Magnesium": {"c": ["abs"], "why": "Magnesium was just under range. It is a mild finding, but it can come with low potassium or low calcium, and it is easy to recheck.", "causes": ["Low intake", "Loose stools or poor absorption", "Alcohol", "Long-term acid-reducing pills (proton pump inhibitors) or water pills (diuretics)"], "recheck": ["Repeat magnesium with potassium and calcium", "A review of medicines, especially acid reducers"], "preg": ["This is a general health item more than a fertility item.", "Finding the cause still matters, since magnesium keeps muscles, nerves and heart rhythm steady."]}, "Hematocrit": {"c": ["abs"], "why": "Hematocrit was a little low in Dec 2025 while hemoglobin stayed normal. Together with the high MCHC on the same test, this may be a machine reading effect rather than true anemia.", "causes": ["Lab or sample effect, such as red cells clumping or cloudy blood", "A real small drop in red cells. This is less likely, because his hemoglobin was normal, and low iron usually makes MCHC go down, not up."], "recheck": ["Repeat full blood count at a US lab, including MCV (red cell size)", "Blood smear review", "Iron panel and folate"], "preg": ["Gaurav's normal hemoglobin suggests his blood carries oxygen well.", "If the repeat shows unusual red cells, the couple's genetic carrier screening can also look for inherited blood traits such as thalassemia."]}, "MCHC": {"c": ["abs"], "why": "MCHC was high on both tests. High MCHC is often a lab effect, but sometimes it points to a red cell condition such as hereditary spherocytosis, so it deserves one careful repeat.", "causes": ["Red cells clumping in a cold sample (cold agglutinins)", "Cloudy blood from fat or broken red cells interfering with the reading", "A hematocrit reading that is too low, since MCHC is worked out from it", "Hereditary spherocytosis, an inherited condition with round, fragile red cells", "Very dilute blood, such as low blood sodium"], "recheck": ["Repeat full blood count at a US lab, telling the lab about the past high MCHC", "Blood smear looked at under a microscope", "Further testing for hereditary spherocytosis only if the smear suggests it"], "preg": ["Hereditary spherocytosis is inherited, so if it were found, a child could inherit it, and that is useful to know before pregnancy.", "High MCHC often turns out to be a lab effect, and one careful repeat can show that."]}, "Lymphocytes": {"c": ["vir"], "k": "lymphocyte", "why": "The lymphocyte percent was high on two tests more than two years apart. Without the actual count, it is not clear whether there are truly too many lymphocytes.", "causes": ["A recent or lingering viral infection, such as Epstein-Barr virus (mono) or cytomegalovirus", "A low count of other white cells, which makes the lymphocyte share look bigger", "Physical stress", "Other infections, including TB", "Rarely, a blood disorder; the most common one in adults is usually found around age 70"], "recheck": ["Full blood count with the actual (absolute) lymphocyte count", "Blood smear", "HIV, hepatitis B and hepatitis C tests", "Flow cytometry, a test that sorts blood cells, only if the count stays high for more than a month without a clear cause"], "preg": ["Fertility doctors advise HIV, hepatitis B and hepatitis C screening for both partners, so these tests serve both purposes.", "A moderate or high fever can lower sperm count and movement for up to about 3 months, so a semen analysis is best timed away from a recent feverish illness."]}, "APTT (clotting time)": {"c": ["clot"], "why": "APTT was less than one second over the top of the range, once, in 2023. It is a small change that can come from how the sample was handled, but it was never repeated.", "causes": ["Sample handling, such as an under-filled tube", "Lupus anticoagulant, an antibody that lengthens the lab test but is linked to clots rather than bleeding", "A mild shortage of a clotting protein (factor 8, 9, 11 or 12); a factor 12 shortage does not cause bleeding", "Von Willebrand disease, the most common inherited bleeding disorder"], "recheck": ["Repeat APTT and PT (prothrombin time) from a clean arm-vein draw", "Mixing study if APTT is still long", "Clotting factor tests, von Willebrand tests or a lupus anticoagulant test, as the doctor decides", "A note of any easy bruising, nosebleeds or long bleeding after dental work"], "preg": ["This finding is about bleeding and clotting, not sperm.", "It matters before any procedure on Gaurav, such as a sperm retrieval, where bleeding risk counts.", "If a factor 8 or 9 shortage (hemophilia) were ever found, all of his daughters would carry the gene, because a father passes his X chromosome to every daughter."]}, "LDL cholesterol": {"c": ["heart", "lpa"], "why": "LDL was 117, above the report's goal of under 100. On its own this is mild. But the 2026 US cholesterol guideline says high Lp(a) is a reason to lower LDL more, and the borderline stress test adds to the reason to look closely.", "causes": ["Diet high in saturated fat", "Family genes", "Low physical activity"], "recheck": ["Fasting lipid panel at a US lab", "ApoB (apolipoprotein B), which counts all the particles that can clog arteries", "Blood pressure check", "A heart risk estimate with the PREVENT calculator, which can give a 30-year risk from age 30"], "preg": ["Lowering LDL with food changes and exercise is a safe first step while trying to conceive.", "Research on statins and sperm is mixed, with some studies showing changes and others not, so if a statin is suggested, Gaurav can ask the doctor about timing.", "European experts estimate that about 21 mg/dL lower LDL over a lifetime can offset the extra risk from about 50 mg/dL more Lp(a)."]}, "Lipoprotein(a)": {"c": ["lpa", "heart"], "k": "lipoprotein", "why": "Lp(a) was 112.4, almost four times the lab's limit of 30. It is inherited and raises the lifetime risk of narrowed arteries, heart attack, stroke and a stiff aortic valve.", "causes": ["Inherited genes, which set more than 90% of the level", "Diet and lifestyle have very little effect on it"], "recheck": ["No need to repeat often, since it stays about the same for life", "Keep LDL, blood pressure and blood sugar well controlled", "Cardiologist review together with the stress test follow-up", "Testing of first-degree relatives (parents and siblings)"], "preg": ["A child has about a 50% chance of inheriting high Lp(a) from a parent who has it.", "Testing first-degree relatives is recommended, so the child's doctor can be told and the child can be tested later.", "No drug made to lower Lp(a) is approved yet. In Sep 2026, a large trial of one such drug (pelacarsen), in people who already had heart disease, reported that it did not meet its main goal of cutting heart attacks, strokes and heart deaths. Other drugs are still being tested.", "The plan for now is to keep every other heart risk low."]}, "hsCRP": {"c": ["heart", "vir"], "why": "hsCRP was 1.46, in the average-risk group. Alongside high Lp(a) it adds a little to the heart picture, but one result is not enough to judge.", "causes": ["Low-level inflammation in the arteries", "A recent cold, infection or injury", "Other ongoing inflammation in the body"], "recheck": ["Repeat hsCRP twice, about two weeks apart, when he has been well", "Read it together with Lp(a), LDL and the stress test follow-up"], "preg": ["No fertility step is needed for this number by itself.", "If the raised value came from an illness with fever, that same illness can lower sperm quality for up to about 3 months."]}, "Total protein": {"c": ["abs"], "k": "protein", "why": "Total protein was a little under the MedPlus range but inside some US ranges. Without albumin and globulin shown, it is hard to tell which part is low.", "causes": ["Low protein intake", "Poor absorption, such as celiac disease", "Protein loss through the kidneys", "Liver problems (his liver enzymes were normal)", "Lab range differences"], "recheck": ["Repeat with albumin and globulin (comprehensive metabolic panel)", "Urine test for protein", "Celiac blood test if folate, iron and protein all stay low"], "preg": ["Several nutrients that matter for sperm (folate, zinc, B12) were also near the low edge, so a low protein result is a reason to look at overall nutrition before trying to conceive.", "A clear albumin result also helps the doctor read zinc and cortisol correctly."]}, "Urine sodium": {"c": ["salt", "heart", "adr"], "k": "sodium", "why": "One urine sodium of 200 was above the lab range. It most often reflects a salty diet, but a single spot sample is a weak guide to daily salt intake.", "causes": ["Salty food in the meals before the test", "Water pills (diuretics) or some other medicines", "Low adrenal gland function", "Kidneys losing salt"], "recheck": ["Blood pressure in clinic and at home", "Blood sodium and potassium", "24-hour urine sodium if an accurate salt count is needed", "Renin and aldosterone if morning cortisol stays low"], "preg": ["The American Heart Association advises no more than 2,300 mg of sodium a day, about one teaspoon of salt, and ideally 1,500 mg.", "Less salt in household cooking helps blood pressure, which matters more with Gaurav's high Lp(a)."]}, "Testosterone, total": {"c": ["sperm"], "k": "testosterone", "why": "Total testosterone was normal at 375, and LH and FSH, the hormones that drive sperm making, were normal too.", "causes": ["Normal result, so there is no cause to look for"], "recheck": ["No repeat needed unless symptoms appear", "If it is ever rechecked, draw it between 7 and 11 a.m."], "preg": ["Testosterone pills, gels or shots should be avoided while trying to conceive, because they switch off the signals for sperm making.", "Normal hormones do not show sperm count or movement, so a semen analysis is still needed."]}, "Vitamin D": {"c": ["sperm", "abs"], "why": "Vitamin D was normal but near the bottom of the lab range. Expert groups do not agree on one target, so this is not a clear shortage.", "causes": ["Little time in the sun", "Low intake of foods with vitamin D"], "recheck": ["The Endocrine Society does not advise routine retesting for healthy adults under 75", "A standard daily amount from food or a basic supplement, as his doctor advises"], "preg": ["A trial of 330 men with fertility problems and low vitamin D found that high-dose vitamin D did not improve semen quality overall.", "A standard daily amount is reasonable for general health, but high doses are not a proven fertility fix."]}, "Vitamin B12": {"c": ["abs", "sperm"], "why": "B12 was normal but in the lower part of the range. A low-normal B12 can still hide a mild shortage, and B12 matters for using folate and for sperm.", "causes": ["Eating little or no meat, fish, eggs or dairy", "Long-term acid-reducing medicines or metformin", "Poor absorption from the stomach or gut"], "recheck": ["Repeat B12 with methylmalonic acid (MMA)", "Homocysteine and folate at the same time"], "preg": ["A review links B12 to better sperm count and movement and less sperm DNA damage, though more clinical studies are needed.", "If a shortage is found, doctors treat it before starting folic acid."]}, "Zinc": {"c": ["sperm", "abs"], "why": "Zinc was normal but near the bottom of the range. Blood zinc moves with meals, time of day, illness and blood protein, so this is not a clear shortage.", "causes": ["Low zinc intake", "Eating before the blood draw (his blood was drawn at 8:00 a.m., so a late-day dip does not explain it)", "Slightly low blood protein lowering the reading", "A recent illness"], "recheck": ["Repeat zinc, fasting, early in the morning", "Albumin at the same time"], "preg": ["Men with fertility problems tend to have less zinc in semen, and some studies showed better sperm movement with zinc.", "But the large FAZST trial found zinc plus folic acid did not improve semen quality or live births, so a high-dose zinc supplement is not a proven fix."]}, "Homocysteine": {"c": ["heart", "abs"], "why": "Homocysteine was normal but in the upper part of the range, which fits with Gaurav's slightly low folate and low-normal B12.", "causes": ["Low folate, B12 or B6", "Alcohol", "Smoking", "Low thyroid", "Rare inherited conditions"], "recheck": ["Repeat homocysteine with folate, B12 and methylmalonic acid (MMA)"], "preg": ["High homocysteine in men has been linked to sperm DNA damage, though the research is still limited.", "Checking folate and B12 together shows whether a vitamin fix is needed."]}};
+const COND = {"heart": {"what": "The heart muscle gets its blood from small arteries on its surface, called coronary arteries. Cholesterol can build up in their walls over many years and narrow them. A narrowed artery may carry enough blood at rest but not during hard exercise. A treadmill stress test looks for signs of that on the heart tracing (ECG) during exercise. The treadmill test can give false alarms. In a large review, it missed about 1 in 3 people with narrowing and flagged about 1 in 4 people without it.", "hist": ["Treadmill stress test, Dec 5, 2025: borderline for reduced blood flow to the heart during exercise", "Lp(a) 112.4 mg/dL (limit 30), Dec 2025", "LDL 117 mg/dL (goal under 100), Dec 2025", "hsCRP 1.46 mg/L (lab range 0–1), Dec 2025", "Urine sodium 200 mmol/L (range 25–145), Dec 2025", "Reassuring, Dec 2025: echocardiogram normal with pumping strength 65%; troponin I under 2.50 and NT-proBNP 53.5, both normal; ECG normal rhythm with a breathing-related heart-rate change"], "tests": ["Cardiologist review of the Dec 2025 treadmill tracing", "Coronary CT angiography (a CT scan of the heart arteries), which guidelines favor for people under 65", "Or a stress echocardiogram (heart ultrasound during exercise)", "Fasting lipid panel and ApoB", "Blood pressure check"], "preg": ["A clear answer before trying to conceive lets the doctor say how hard Gaurav can safely exercise.", "If medicine is suggested, the doctor can talk through timing, since studies of statins and sperm are mixed."]}, "lpa": {"what": "Lp(a) is a cholesterol particle with an extra sticky protein. The level is set mostly by genes and stays about the same for life. High Lp(a) adds to the risk of narrowed arteries, heart attack, stroke and a stiff aortic valve. Diet and exercise barely change it. No drug made to lower it is approved yet, so the plan is to keep every other risk low.", "hist": ["Lp(a) 112.4 mg/dL in Dec 2025 (lab limit 30)", "LDL 117 mg/dL in Dec 2025", "Borderline treadmill stress test, Dec 5, 2025"], "tests": ["One Lp(a) test is usually enough for life", "A US repeat is optional, to have it on record locally", "Testing of his parents and siblings", "Heart risk review with a cardiologist"], "preg": ["A child has about a 50% chance of inheriting high Lp(a) from a parent who has it.", "Knowing this now means the child's doctor can be told, and the child can be tested later."]}, "adr": {"what": "The adrenal glands sit on top of the kidneys and make cortisol. If they make too little, a person may have low blood pressure, dizziness, belly pain or darker skin. During a sudden illness, the body may not make enough cortisol to cope, which can lead to an emergency called an adrenal crisis. In India, tuberculosis is a known cause of adrenal gland damage. One morning test cannot confirm this. A stimulation test, where the doctor gives a shot of ACTH and checks whether cortisol rises, settles it.", "hist": ["Cortisol 3.70 µg/dL at 8:00 a.m. in Dec 2025 (expected about 6–18)", "DHEA-S 316 µg/dL in Dec 2025, normal (80–560), which is reassuring", "Urine sodium 200 mmol/L in Dec 2025; low adrenal function is one of several things that can raise it", "Grew up in India, and the Mar 2023 chest CT showed scarring"], "tests": ["Repeat 8:00 a.m. cortisol with ACTH", "ACTH (cosyntropin) stimulation test", "Blood sodium, potassium, renin and aldosterone", "A review of any steroid creams, inhalers or injections in the past year", "IGRA blood test for TB (QuantiFERON), which doctors also use when looking for a cause"], "preg": ["Untreated low cortisol can turn an ordinary illness into an emergency, so it is best settled before pregnancy and a newborn's first months.", "If Gaurav needs latent TB treatment, the drug rifampin speeds up cortisol breakdown and has triggered adrenal crisis in people with adrenal insufficiency, so the order of testing and treatment matters."]}, "pit": {"what": "The pituitary is a pea-sized gland under the brain. It sends signals to the adrenal glands (ACTH), the thyroid (TSH), the testes (LH and FSH) and the liver (growth hormone, which leads to IGF-1). If the pituitary underworks, more than one of these signals can drop. For example, low thyroid or low growth hormone can come along with low cortisol from a pituitary cause.", "hist": ["Cortisol 3.70 µg/dL at 8:00 a.m., Dec 2025 (low)", "IGF-1 107 ng/mL, Dec 2025, flagged low against a range that matches 14-year-old boys", "Free T3 2.58 pg/mL, Dec 2025, just below 2.66", "Against this, in Dec 2025: TSH 2.93, LH 5.71, FSH 3.24, prolactin 7.61 and testosterone 375 were all normal"], "tests": ["Repeat morning cortisol with ACTH (low ACTH with low cortisol points to the pituitary)", "Repeat IGF-1 at a US lab with adult age-based ranges", "Free T4 with TSH", "Brain imaging of the pituitary only if a pituitary cause is confirmed"], "preg": ["The pituitary drives sperm making through LH and FSH, and both were normal in Dec 2025, which is reassuring.", "A semen analysis shows directly whether sperm making is on track."]}, "ir": {"what": "Insulin is the hormone that moves sugar from the blood into cells. In insulin resistance, cells respond less, so the body makes more insulin to keep blood sugar normal. Blood sugar can stay normal for years while this builds. Low SHBG is closely linked to insulin resistance and to a higher future risk of type 2 diabetes. US diabetes guidelines advise testing Asian Americans at a lower BMI (body mass index) of 23 when they have at least one other risk factor, because type 2 diabetes tends to appear at a lower body weight.", "hist": ["SHBG 29.9 nmol/L in Dec 2025, below 32.4–128", "Fasting glucose 89 mg/dL and HbA1c 5.1% in Dec 2025, both normal", "Fasting insulin 9.03 and after-meal insulin 32.8 in Dec 2025, both inside the lab ranges"], "tests": ["Repeat SHBG", "Fasting glucose, fasting insulin and HbA1c; doctors can combine glucose and insulin into an insulin resistance score called HOMA-IR", "Waist size, weight and blood pressure", "Liver tests or a liver ultrasound for fatty liver if the doctor suspects it"], "preg": ["Metabolic syndrome, which includes insulin resistance, is linked in studies to lower sperm count, poorer movement and more sperm DNA damage.", "Sperm take roughly 2 to 3 months to form, so a semen analysis reflects health over the past few months."]}, "abs": {"what": "Several nutrients were low or near the low edge at the same time. This can happen when the diet is short on them, or when the gut does not absorb them well. Celiac disease is one gut cause. In celiac disease, gluten from wheat, barley and rye harms the lining of the small intestine, so it absorbs less iron, folate and other nutrients. A blood test can screen for it, but only while the person is still eating gluten.", "hist": ["Iron 58 µg/dL (range 70–180), Dec 2025, with normal ferritin 97.8", "Red cell folate 500.9 ng/mL (MedPlus range 523–1257), Dec 2025", "Magnesium 1.7 mg/dL (range 1.8–2.6), Dec 2025", "Total protein 6.4 g/dL (range 6.6–8.3), Dec 2025", "Hematocrit 38.9% (range 40–50), Dec 2025", "Near the low edge in Dec 2025: vitamin D 32.1, B12 243, zinc 72.63; homocysteine 11.9 near the top", "IGF-1 (107) and free T3 (2.58) can also drop when food intake is low", "H. pylori antibody negative, Dec 2025"], "tests": ["Celiac blood test (tTG-IgA, with total IgA), done while still eating gluten", "Repeat iron panel, folate, B12 with MMA, magnesium, zinc and albumin at one US lab", "Urine protein test", "A dietitian review of a typical week of meals"], "preg": ["Folate, zinc, B12 and vitamin D all play a part in making sperm, and Gaurav's were low or near the low edge.", "Supplements have not been proven to treat male infertility, and high-dose folic acid with zinc raised sperm DNA damage in one large trial, so finding the cause and eating well come first.", "Older reports found semen problems in men with celiac disease that got better on a gluten-free diet, though there is little newer research. So the celiac test is worth asking about before trying to conceive, especially if folate, iron and protein stay low on a repeat."]}, "lung": {"what": "A chest CT (computed tomography) scan is a detailed X-ray picture of the chest. Widened airways are called bronchiectasis. In India, past TB and other lung infections are the most common causes. The right middle lobe airway is long and narrow, so it is prone to blockage and later widening. Rarely, inherited conditions that affect the tiny hairs lining the airways (primary ciliary dyskinesia) or the cystic fibrosis gene cause both widened airways and male infertility.", "hist": ["Mar 2023 chest CT: minimal scarring and a few slightly widened airways in the right middle lobe", "Mar 2023 chest CT: a few small lymph nodes in the middle of the chest, called non-specific", "Mar 2023 sputum tests: no TB growth after 6 weeks and no cancer cells", "Mar 2023 lung function test: done in Hyderabad, but no result recorded"], "tests": ["Repeat lung function test (spirometry)", "Lung specialist review of the 2023 CT images", "A new CT only if the specialist or symptoms call for it", "IGRA blood test for latent TB"], "preg": ["If a semen analysis showed sperm that do not move, or no sperm, doctors would think about the cilia and cystic fibrosis gene causes, since these can link the lungs and fertility.", "Recommended carrier screening before pregnancy includes the cystic fibrosis gene."]}, "tb": {"what": "Latent TB means TB germs are in the body but asleep. A person with latent TB has no symptoms and cannot spread TB. Without treatment, about 5 to 10 of every 100 people with latent TB develop active TB in their lifetime, and active TB can spread through the air. People born in countries where TB is common are advised to be tested. The IGRA blood test (QuantiFERON) is preferred for people who had the BCG vaccine, because BCG can make the skin test falsely positive but does not affect the blood test. Treatment takes 3 to 4 months and is about 90% effective at preventing TB disease.", "hist": ["Grew up in India", "Mar 2023 chest CT: scarring and slightly widened airways in the right middle lobe, plus small non-specific lymph nodes in the middle of the chest", "Mar 2023 sputum culture: no TB growth after 6 weeks (this checks for active TB, not latent TB)", "No latent TB test on record"], "tests": ["IGRA blood test (QuantiFERON)", "Chest X-ray if the IGRA is positive, to rule out active TB", "A short treatment course (3 or 4 months) if latent TB is confirmed"], "preg": ["Children under 5 are more likely to get sick soon after TB infection, and babies are more likely to get severe forms such as TB meningitis.", "Latent TB cannot spread, but treating it before the baby arrives lowers the chance it wakes up and becomes contagious later in the household.", "The preferred short treatments use rifampin or a related drug, rifapentine, and both speed up cortisol breakdown, so the doctor should know about Gaurav's low morning cortisol first."]}, "vir": {"what": "Some viruses, such as Epstein-Barr virus (the cause of mono) or cytomegalovirus, can raise the number of lymphocytes. Other infections, including early HIV and TB, can raise them too. A blood smear can show lymphocytes that look 'activated', which points to a virus. The actual lymphocyte count, not only the percent, shows whether there is a true excess.", "hist": ["Lymphocytes 44.8% (Mar 2023) and 47.4% (Dec 2025), above the 20–40% range", "hsCRP 1.46 mg/L in Dec 2025", "Small non-specific lymph nodes in the middle of the chest on the Mar 2023 CT", "ESR 2 mm/hr on both tests, normal"], "tests": ["Full blood count with the absolute lymphocyte count and a blood smear", "HIV, hepatitis B and hepatitis C tests", "Other virus tests as the doctor decides", "Flow cytometry only if the count stays high for more than a month without a clear cause"], "preg": ["Fertility doctors advise HIV, hepatitis B and hepatitis C screening for both partners, so these tests serve both purposes.", "A moderate or high fever can lower sperm count and movement for up to about 3 months, so a semen analysis is best timed away from a recent feverish illness."]}, "clot": {"what": "Blood clotting depends on a chain of clotting proteins called factors. If one factor runs low, the lab clotting time gets longer, and the person may bruise or bleed more easily. Some causes lengthen the lab test without causing bleeding, such as a factor 12 shortage. An antibody called lupus anticoagulant also lengthens the test but is linked to clots rather than bleeding. A slightly long result can also come from how the sample was taken or handled.", "hist": ["APTT 34.9 seconds in Mar 2023 (range 25–34), not repeated since", "Platelets normal: 2.51 lakhs/cumm (Mar 2023) and 2.19 (Dec 2025)"], "tests": ["Repeat APTT and PT (prothrombin time)", "Mixing study if APTT is still long", "Clotting factor tests, von Willebrand tests or a lupus anticoagulant test, as the doctor decides", "A personal and family history of bleeding"], "preg": ["This finding is about bleeding and clotting, not sperm.", "It matters before any fertility procedure on Gaurav, such as a sperm retrieval.", "If a factor 8 or 9 shortage (hemophilia) were found, all of his daughters would carry the gene, because a father passes his X chromosome to every daughter."]}, "salt": {"what": "Table salt is about 40% sodium. Extra sodium leaves the body in urine, so urine sodium rises with a salty diet. Cutting sodium helps lower blood pressure. The American Heart Association advises no more than 2,300 mg of sodium a day, about one teaspoon of salt, and ideally 1,500 mg for most adults. A single urine sample is a weak guide to daily intake. A 24-hour urine collection is more reliable.", "hist": ["Urine sodium 200 mmol/L in Dec 2025 (range 25–145)", "No blood pressure reading in the record", "Lp(a) 112.4 and a borderline stress test, which make blood pressure control more important"], "tests": ["Blood pressure in clinic and at home", "Blood sodium and potassium", "24-hour urine sodium if an accurate count is wanted", "Renin and aldosterone if morning cortisol stays low"], "preg": ["Less salt in household cooking makes it easier for Gaurav to keep his own intake down.", "This is a heart item more than a fertility item, but it fits the same before-pregnancy health check."]}, "sperm": {"what": "A semen analysis is the main test of male fertility. It counts sperm and checks how well they move and how they are shaped. US urology and fertility guidelines say a man's first fertility check should include a reproductive history and at least one semen analysis, and that both partners should be checked at the same time. Blood hormone tests show the signals for making sperm, but not the sperm themselves. Sperm take roughly 2 to 3 months to form, so a result reflects health over the past few months.", "hist": ["No semen analysis on record", "Normal in Dec 2025: testosterone 375, free testosterone 8.24, LH 5.71, FSH 3.24, prolactin 7.61 and estradiol 17.7", "Dec 2025: folate slightly low; zinc, B12 and vitamin D near the low edge; homocysteine near the top", "SHBG low at 29.9 in Dec 2025, which can go with insulin resistance", "Slightly widened airways on the Mar 2023 CT, which in rare inherited conditions link to sperm movement problems"], "tests": ["Semen analysis, usually after 2 to 7 days without ejaculation", "Results are compared with World Health Organization 2021 lower limits, such as 16 million sperm per mL and 30% moving forward", "A repeat semen analysis if the doctor wants to confirm an abnormal result", "More hormone tests and genetic tests, usually only if the semen analysis shows a problem"], "preg": ["This is the most direct way to know whether sperm count and movement are on track.", "Testosterone products should be avoided while trying to conceive, because they shut down sperm making.", "Antioxidant and vitamin supplements have not been proven to treat male infertility.", "A feverish illness can lower sperm for up to about 3 months, so the test is fairest after a well stretch.", "UW Health Fertility Care can check both partners, which may mean fewer separate visits."]}};
+const PLAIN = {"SHBG": {"w": ["SHBG stands for sex hormone-binding globulin. It is a protein made by the liver. It carries testosterone and other sex hormones through the blood, like a bus carrying passengers.", "A hormone riding on the bus is not free to work. When SHBG is low, more of the hormone is free. Low SHBG is closely linked to insulin resistance, where the body has to make extra insulin to keep blood sugar normal."], "y": ["Gaurav's SHBG was 29.9 nmol/L in Dec 2025.", "The lab range is 32.4–128, so his result was a little below it.", "His free testosterone was normal at 8.24 ng/dL (range 4.7–24.4).", "His fasting glucose (89) and HbA1c (5.1%) were normal, so these results do not show diabetes.", "Because low SHBG can go with insulin resistance, it is worth a recheck."]}, "Cortisol": {"w": ["Cortisol is a stress hormone. The adrenal glands, which sit on top of the kidneys, make it. It helps keep blood pressure and blood sugar steady and helps the body cope with illness.", "Cortisol follows a daily clock. It is highest in the early morning and much lower late at night. A morning test is like checking a pot of water at the time it should be boiling."], "y": ["Gaurav's cortisol was 3.70 µg/dL at 8:00 a.m. in Dec 2025.", "A usual morning level is about 6–18, so his was low for that time of day.", "One low result does not prove a problem, because steroid medicines (including creams, inhalers and joint shots), a sleep schedule that runs late and differences between lab methods can all make a morning reading low.", "His DHEA-S, another adrenal hormone, was normal at 316 µg/dL (range 80–560). One medical review says a DHEA-S above 100 rules out the adrenal glands themselves failing, so this is reassuring. A repeat test is still needed, because a normal DHEA-S does not fully rule out a problem with the pituitary signal.", "A repeat morning test with ACTH, and if needed a stimulation test, can settle it."]}, "IGF-1": {"w": ["IGF-1 stands for insulin-like growth factor 1. The liver makes it when growth hormone from the pituitary gland tells it to. Doctors use IGF-1 as a stand-in for growth hormone, because growth hormone itself rises and falls through the day.", "IGF-1 changes a lot with age. It rises to a peak in the teenage years and then slowly falls through adult life. So the right range depends on age, like a shoe size that changes as a child grows."], "y": ["Gaurav's IGF-1 was 107 ng/mL in Dec 2025, when he was 30.", "The MedPlus Hyderabad lab printed a range of 220–972 and marked it low.", "That exact range matches a published range for 14-year-old boys, not for adults.", "Published ranges for men in their late 20s and early 30s start between about 88 and 117, depending on the lab method.", "So his result is low-normal or just below normal, and a repeat at a US lab with an adult age-based range would clear this up."]}, "Free T3": {"w": ["T3 is the active thyroid hormone. The thyroid gland in the neck makes mostly T4, and the body turns T4 into T3. Free T3 is the part not tied to proteins, ready to work.", "Thyroid hormone sets the body's speed, like the idle setting on a car engine. TSH (thyroid-stimulating hormone) is the signal from the pituitary gland that tells the thyroid how hard to work."], "y": ["Gaurav's free T3 was 2.58 pg/mL in Dec 2025.", "The lab range is 2.66–4.33, so it was just below the bottom.", "His TSH was normal at 2.93 µIU/mL.", "A slightly low T3 with a normal TSH often comes from eating less, a recent illness or physical stress, rather than thyroid disease.", "A repeat with free T4 can show whether it was a one-time dip."]}, "Folate (red cell)": {"w": ["Folate is vitamin B9. It comes from leafy greens, beans, lentils and fortified grains. The body needs it to copy DNA, so it matters for cells that divide fast, including sperm.", "Red cell folate measures the folate stored inside red blood cells. It reflects a longer stretch of time than a blood folate test, which can change after one meal."], "y": ["Gaurav's red cell folate was 500.9 ng/mL in Dec 2025.", "The MedPlus range is 523–1257, so it was a little below that lab's range.", "Folate ranges differ a lot between labs and test methods. One US hospital lists 140–628 ng/mL as normal, and his result sits inside that range.", "So this is a borderline result, not a clear shortage.", "A repeat at a US lab, with B12 checked at the same time, would show where he stands."]}, "Iron": {"w": ["Serum iron is the iron in the blood at the moment of the test. Iron helps red blood cells carry oxygen.", "Serum iron goes up and down through the day and after meals, like the water level in a tub with the tap and the drain both open. Ferritin, the iron storage protein, is a better guide to how much iron the body has saved."], "y": ["Gaurav's serum iron was 58 µg/dL in Dec 2025, below the 70–180 range.", "His ferritin, the storage measure, was normal at 97.8 ng/mL (range 30–400).", "His transferrin saturation, which shows how full the iron carrier is, was normal at 19.3% (range 15–50).", "His hemoglobin was normal at 14.2 g/dL.", "Together this points to a low reading on that day, not empty iron stores."]}, "Magnesium": {"w": ["Magnesium is a mineral. It helps muscles relax, nerves send signals and the heart keep a steady beat.", "Most of the body's magnesium sits inside bones and cells, not in the blood. So a blood test is like looking at the cash in a wallet, not the savings account. A blood level can even look normal when the stores are low."], "y": ["Gaurav's magnesium was 1.7 mg/dL in Dec 2025.", "The range is 1.8–2.6, so it was just below normal.", "Common reasons include low intake, loose stools, alcohol, and some medicines such as long-term acid reducers or water pills.", "Low magnesium often comes with low potassium or low calcium, so those are worth checking at the same time."]}, "Hematocrit": {"w": ["Hematocrit is the share of the blood made up of red blood cells. It is shown as a percent.", "Picture a glass of blood left to settle. The red cells sink to the bottom. Hematocrit is how much of the glass the red layer fills."], "y": ["Gaurav's hematocrit was 44.7% in Mar 2023 and 38.9% in Dec 2025.", "The range is 40–50, so the 2025 result was a little low.", "His hemoglobin, the oxygen carrier, was normal both times (15.6 g/dL, then 14.2 g/dL).", "The high MCHC on the same test is worked out from hematocrit, so a hematocrit reading that is off would push MCHC up.", "A repeat blood count at a US lab would show whether the low hematocrit is real."]}, "MCHC": {"w": ["MCHC stands for mean corpuscular hemoglobin concentration. It tells how packed each red blood cell is with hemoglobin, the protein that carries oxygen.", "The machine does not measure MCHC directly. It works it out by dividing hemoglobin by hematocrit. So if one of those numbers is off, MCHC comes out wrong, like a math answer thrown off by one bad number."], "y": ["Gaurav's MCHC was 34.9 g/dL in Mar 2023 and 36.5 g/dL in Dec 2025.", "The range is 31.5–34.5, so both were high.", "A high MCHC is often a lab effect, such as red cells clumping in a cold sample or cloudy blood interfering with the reading.", "In one study of MCHC results above 36.5, about 3 in 10 were lab effects and about 1 in 7 came from a true red cell condition.", "A repeat blood count with a blood smear can tell these apart."]}, "Lymphocytes": {"w": ["Lymphocytes are a type of white blood cell. They fight viruses and make antibodies, and they remember germs the body has met before.", "A blood count can report lymphocytes two ways. One is a percent of all white cells. The other is the actual number of cells. The percent can rise just because another white cell type has fallen, like one slice of a pie looking bigger when the other slices shrink."], "y": ["Gaurav's lymphocytes were 44.8% in Mar 2023 and 47.4% in Dec 2025.", "The range is 20–40%, so both were high.", "His record does not list the actual lymphocyte count, which is the number doctors use to decide if there is a true excess.", "Common causes of a true excess are viral infections and physical stress.", "A repeat blood count with the actual number and a blood smear is the next step."]}, "APTT (clotting time)": {"w": ["APTT stands for activated partial thromboplastin time. It measures how many seconds a blood sample takes to clot in the lab.", "Clotting works like a row of dominoes, with each clotting protein knocking over the next. APTT checks one part of that row. A longer time can mean one domino is weak, or that something in the sample slowed the test down."], "y": ["Gaurav's APTT was 34.9 seconds in Mar 2023.", "The range is 25–34, so it was less than one second over.", "It was tested only once and was not repeated in Dec 2025.", "Small rises can come from how the sample was collected or handled.", "A repeat test, and a mixing test if it is still long, would settle it."]}, "LDL cholesterol": {"w": ["LDL stands for low-density lipoprotein. It is called the 'bad' cholesterol because it can build up in the walls of arteries.", "Think of LDL particles as delivery trucks. The more trucks on the road, the more of them bump into the artery walls and leave debris behind. Over many years, that debris can narrow the arteries."], "y": ["Gaurav's LDL was 117 mg/dL in Dec 2025.", "The goal on his report is under 100, so it was above goal.", "His total cholesterol (181), HDL (51) and triglycerides (66) were in range.", "His high Lp(a) makes LDL more important, because guidelines say people with high Lp(a) should keep their other risks lower.", "A fasting lipid panel at a US lab will confirm the number."]}, "Lipoprotein(a)": {"w": ["Lp(a), said 'L-P-little-a', stands for lipoprotein(a). It is a cholesterol particle, much like LDL, with an extra sticky protein attached.", "Lp(a) is set mostly by genes. More than 90% of the level comes from inheritance, so it stays about the same for life. Diet and exercise barely change it, so one test is usually enough."], "y": ["Gaurav's Lp(a) was 112.4 mg/dL in Dec 2025.", "His lab's limit is under 30.", "The National Lipid Association calls 50 or higher a high-risk level, and his result is more than twice that.", "European experts estimate that heart and artery risk roughly doubles at around 100.", "High Lp(a) is a lifelong risk factor, not proof of heart disease on its own. The borderline treadmill test is the part that needs a doctor's follow-up now."]}, "hsCRP": {"w": ["hsCRP stands for high-sensitivity C-reactive protein. The liver makes CRP when there is inflammation anywhere in the body.", "The high-sensitivity test picks up very small amounts, like a smoke detector set to notice a faint whiff. Low-level inflammation in artery walls is linked to heart risk. But a cold, an infection or an injury can also raise it."], "y": ["Gaurav's hsCRP was 1.46 mg/L in Dec 2025.", "Heart groups sort results into under 1 (lower risk), 1 to 3 (average risk) and over 3 (higher risk), so his falls in the average group.", "His Mar 2023 result of 0.60 was a regular CRP test, so the two numbers cannot be compared directly.", "Guidance says to measure it twice, about two weeks apart, at a time when he is well."]}, "Total protein": {"w": ["Total protein adds up all the proteins in the liquid part of the blood. The two main groups are albumin and globulins.", "Albumin keeps fluid inside blood vessels and carries hormones and minerals. Globulins include the antibodies that fight infection. Total protein is like counting all the vehicles on a road without knowing which are cars and which are buses."], "y": ["Gaurav's total protein was 6.4 g/dL in Dec 2025.", "The MedPlus range is 6.6–8.3, so it was a little low.", "Some US ranges start at 6.3, and by that range his result would count as normal.", "His report does not show albumin and globulin separately, which would show which part is low.", "Low blood protein can make zinc and total cortisol read lower, because both travel on blood proteins."]}, "Urine sodium": {"w": ["Urine sodium measures how much sodium, the main part of salt, is in a urine sample. The kidneys get rid of extra sodium through urine.", "A single urine sample is a snapshot. It changes with recent meals and with how much a person drank. A 24-hour urine collection is a better guide to daily salt intake, like a full day of video instead of one photo."], "y": ["Gaurav's urine sodium was 200 mmol/L in Dec 2025.", "The lab range is 25–145, so it was high.", "The most common reason is a salty diet, but water pills, kidney salt loss and low adrenal function can also raise it.", "Because his morning cortisol was also low, a doctor may want to check blood sodium and potassium too.", "A blood pressure check is a simple first step."]}, "Testosterone, total": {"w": ["Testosterone is the main male hormone. The testes make it when the pituitary gland sends a signal called LH (luteinizing hormone). It supports muscle, energy, sex drive and sperm making.", "Total testosterone counts all of it, both the part riding on proteins and the free part. Levels are highest in the morning, so the test is best done between about 7 and 11 a.m."], "y": ["Gaurav's total testosterone was 375 ng/dL in Dec 2025.", "The lab range is 197–670, so it was normal.", "US urology guidance uses under 300 as a sign of low testosterone, and his result is above that.", "His free testosterone (8.24), LH (5.71) and FSH (3.24) were also normal.", "This means the hormone signals for making sperm look normal, but only a semen analysis can show the sperm themselves."]}, "Vitamin D": {"w": ["Vitamin D helps the body take in calcium for strong bones. Skin makes it in sunlight, and small amounts come from foods such as fish, eggs and fortified milk.", "The blood test measures 25-hydroxyvitamin D, the storage form. Expert groups do not agree on one cut-off for 'enough', so lab ranges vary."], "y": ["Gaurav's vitamin D was 32.1 ng/mL in Dec 2025.", "His lab range is 31–100, so it was normal but near the bottom.", "The Endocrine Society's 2024 guideline says experts could not set a clear target level, and it does not advise routine testing for healthy adults under 75.", "A trial of 330 men with fertility problems found that vitamin D did not improve semen quality overall."]}, "Vitamin B12": {"w": ["Vitamin B12 helps make red blood cells, keeps nerves healthy and helps copy DNA. It comes mainly from meat, fish, eggs and dairy, and from fortified foods.", "Folate and B12 work as a team. Doctors check both together, and they treat a B12 shortage before giving folic acid."], "y": ["Gaurav's B12 was 243 pg/mL in Dec 2025.", "His lab range is 197–771, so it was normal but in the lower part.", "A level under 150 clearly shows a shortage.", "When the level is low-normal, a test called methylmalonic acid (MMA) can show whether the body is truly short.", "Eating little or no animal food, or taking long-term acid reducers or metformin, raises the chance of low B12."]}, "Zinc": {"w": ["Zinc is a mineral. It helps the immune system, wound healing and sperm making.", "Blood zinc changes through the day. It is lowest in the evening, can drop after meals and falls during illness. So it is best measured early in the morning before eating, like weighing oneself at the same time each day."], "y": ["Gaurav's zinc was 72.63 µg/dL in Dec 2025.", "His lab range is 70–120, so it was normal but near the bottom.", "About 60% of blood zinc rides on albumin, so his slightly low total protein could pull the reading down.", "A large trial found that zinc plus folic acid pills did not improve semen quality or birth rates."]}, "Homocysteine": {"w": ["Homocysteine is a substance the body makes when it breaks down protein. The body clears it using folate, B12 and B6.", "When those vitamins run low, homocysteine builds up, like dishes piling up in a sink when the dishwasher is slow. High levels are linked to heart disease and to damage in sperm DNA."], "y": ["Gaurav's homocysteine was 11.9 µmol/L in Dec 2025.", "His lab range is 3.7–13.9, so it was normal but in the upper part.", "Many labs call levels under about 15 normal.", "His folate was slightly low and his B12 low-normal, and both can push homocysteine up.", "Rechecking it with folate and B12 shows whether the three move together."]}};
+const QMAP = {"q2": ["Lipoprotein(a)"], "q3": ["Cortisol"], "q4": ["LDL cholesterol"], "q5": ["Folate (red cell)"], "q6": ["Iron", "Magnesium"], "q7": ["Lymphocytes"], "q8": ["Free T3"], "q9": ["hsCRP"], "g-shbg": ["SHBG"], "g-igf": ["IGF-1"], "g-rbc": ["Hematocrit", "MCHC"], "g-protein": ["Total protein"], "g-sodium": ["Urine sodium"], "g-aptt": ["APTT (clotting time)"], "g-borderline": ["Vitamin D", "Vitamin B12", "Zinc", "Homocysteine"]};
+function qcell(name){ const qs = S.questions.filter(q=>(QMAP[q.id]||[]).includes(name)); return `<td class="qcol">${qs.map(q=>`<div class="qc ${q.status}"><b>${esc(q.q)}</b>${q.list?`<ul class="qchk">${q.list.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}${q.status==="answered"?"<small>Answered</small>":q.status==="asked"?"<small>Asked</small>":""}</div>`).join('')}</td>`; }
+let rGroup = "all", tSel = null, tFam = "all", tSt = "all";
+function regroup(){
+  const ix = {}; GROUPS.forEach(([g,ns],gi)=>ns.forEach((n,ni)=>ix[n]=[g,gi*100+ni]));
+  S.tests.forEach((t,k)=>{ if(ix[t.name]) t.group = ix[t.name][0]; t.__o = ix[t.name] ? ix[t.name][1] : 9000+k; });
+  S.tests.sort((a,b)=>a.__o-b.__o); S.tests.forEach(t=>delete t.__o);
+}
+const numv = v => { const n = parseFloat(String(v).replace(/[,<]/g,'')); return isNaN(n) ? null : n; };
+const worst = t => { const fs = t.values.map(v=>v.f); return fs.includes('h')?'h':fs.includes('l')?'l':fs.includes('x')?'x':'n'; };
+function parseRange(r){
+  r = String(r||'').replace(/,/g,''); if(/read on|negative/i.test(r)) return {lo:null,hi:null};
+  let m = r.match(/(\d+(?:\.\d+)?)\s*or more/i); if(m) return {lo:+m[1], hi:null};
+  m = r.match(/under\s*(\d+(?:\.\d+)?)/i); if(m) return {lo:null, hi:+m[1]};
+  m = r.match(/(\d+(?:\.\d+)?)\s*[–-]\s*(\d+(?:\.\d+)?)/); if(m) return {lo:(+m[1])||null, hi:+m[2]};
+  return {lo:null, hi:null};
+}
+function scale(t){
+  const rg = parseRange(t.range), vals = t.values.map(v=>numv(v.v)).filter(x=>x!==null);
+  if(!vals.length || (rg.lo===null && rg.hi===null)) return null;
+  let mn, mx;
+  if(rg.lo!==null && rg.hi!==null){ const s = rg.hi-rg.lo; mn = Math.max(0, rg.lo-s*0.6); mx = rg.hi+s*0.6; }
+  else if(rg.hi!==null){ mn = Math.max(0, Math.min(rg.hi*0.7, ...vals) - rg.hi*0.05); mx = rg.hi*1.3; } else { mn = 0; mx = rg.lo*2.4; }
+  mn = Math.min(mn, ...vals); mx = Math.max(mx, ...vals);
+  const p = x => Math.max(1.5, Math.min(98.5, (x-mn)/(mx-mn)*100));
+  return {rg, p, a: rg.lo!==null ? p(rg.lo) : 0, b: rg.hi!==null ? p(rg.hi) : 100};
+}
+function spec(t, big, tm){
+  const s = scale(t);
+  if(!s) return `<div class="spec"><span class="none"></span></div><div class="speclab"><span>No number range to plot</span></div>`;
+  const z = s.rg.lo!==null ? `<span class="zl" style="width:${s.a}%"></span><span class="zn" style="width:${s.b-s.a}%"></span><span class="zh" style="width:${100-s.b}%"></span>` : `<span class="zn" style="width:${s.b}%;border-radius:5px 0 0 5px"></span><span class="zh" style="width:${100-s.b}%"></span>`;
+  const vs = t.values.map(v=>({v, n:numv(v.v)})).filter(o=>o.n!==null);
+  const row = vs.map((o,i)=>i%2); let nr = 2;
+  if(tm){ const ends = []; vs.map((o,i)=>({i,x:s.p(o.n)})).sort((a,b)=>a.x-b.x).forEach(o=>{ let r = ends.findIndex(e=>o.x-e>=34); if(r<0){ r = ends.length; ends.push(0); } ends[r] = o.x; row[o.i] = r; }); nr = Math.max(1, ends.length); }
+  const mk = vs.map((o,i)=>`<i class="mk${i<vs.length-1?' old':''}" style="left:${s.p(o.n)}%" title="${esc(o.v.d)}: ${esc(o.v.v)}"></i>${big?`<span class="mlab" style="left:${s.p(o.n)}%;top:${20+row[i]*14}px;transform:translateX(${s.p(o.n)<20?-s.p(o.n)*2.5:s.p(o.n)>80?-50-(s.p(o.n)-80)*2.5:-50}%)">${tm ? '<b>'+esc(o.v.v)+'</b> '+esc(o.v.d) : esc(o.v.d)}</span>`:''}`).join('');
+  if(tm) return `<div class="spec">${z}${mk}</div><div style="height:${10+nr*14}px"></div>`;
+  return `<div class="spec">${z}${mk}</div><div class="speclab"${big?' style="margin-top:30px"':''}><span>${s.rg.lo!==null?'low &lt; '+s.rg.lo:''}</span><span>${s.rg.hi!==null?'high &gt; '+s.rg.hi:''}</span></div>`;
+}
+function blk(title, x){
+  if(!x || (Array.isArray(x) && !x.length)) return '';
+  return `<div class="blk"><h3>${esc(title)}</h3>${Array.isArray(x)?`<ul>${x.map(i=>`<li>${esc(i)}</li>`).join('')}</ul>`:`<p>${esc(x)}</p>`}</div>`;
+}
+function tilesView(){
+  const groups = [...new Set(S.tests.map(t=>t.group))];
+  const ch = (a,v,l,cur) => `<button class="chip" data-${a}="${esc(v)}" aria-pressed="${cur===v}">${esc(l)}</button>`;
+  if(tSel===null){ tSel = S.tests.findIndex(t=>t.name==="AMH"); if(tSel<0) tSel = 0; }
+  const tl = S.tests.map((t,i)=>{
+    const w = worst(t), lv = t.values[t.values.length-1], o = !!ORD[t.name];
+    if(tFam!=="all" && t.group!==tFam) return '';
+    if(tSt==="abn" && w==="n") return ''; if(tSt==="ord" && !o) return ''; if(tSt==="nord" && o) return '';
+    return `<button class="rt ${w}" data-ti="${i}" aria-pressed="${tSel===i}" aria-label="${esc(t.name)}, latest ${esc(lv.v)} ${esc(t.unit)}"><div class="tnm">${esc(t.name)}</div><div class="vv ${lv.f}">${esc(lv.v)} <small>${esc(t.unit)} · ${esc(lv.d)}</small></div>${spec(t,false)}<div class="ordt ${o?'y':'n'}">${o?'✓ Ordered':'✗ Not ordered'}</div></button>`;
+  });
+  const tiles = [...new Set(S.tests.map(t=>t.group))].map(g=>{ const h = S.tests.map((t,i)=>t.group===g?tl[i]:'').join(''); return h ? `<div class="gsec"><h3 class="gh">${esc(g)}</h3><div class="rgrid">${h}</div></div>` : ''; }).join('');
+  $("v-tiles").innerHTML = `<div style="display:grid;gap:12px">
+    <div class="bar">${ch("ts","all","All results",tSt)}${ch("ts","abn","Ever out of range",tSt)}${ch("ts","ord","Ordered now",tSt)}${ch("ts","nord","Not ordered",tSt)}</div>
+    <div class="cidx"><div><b>Tile colour</b><span><i style="background:var(--low-soft);border-top:4px solid var(--low)"></i>Was low</span><span><i style="background:var(--high-soft);border-top:4px solid var(--high)"></i>Was high</span><span><i style="background:var(--note-soft);border-top:4px solid var(--note)"></i>Can't be read as drawn</span><span><i style="background:var(--ok-soft);border-top:4px solid var(--ok)"></i>Always in range</span></div><div><b>Range bar</b><span><i class="bar-i" style="background:var(--zl)"></i>Low zone</span><span><i class="bar-i" style="background:var(--zn)"></i>Normal zone</span><span><i class="bar-i" style="background:var(--zh)"></i>High zone</span><span><i class="mk-i"></i>Latest result</span><span><i class="mk-i" style="opacity:.35"></i>Earlier results</span></div><div><b>Labs</b><span style="color:var(--ok);font-weight:600">✓ Ordered now</span><span style="font-weight:600">✗ Not ordered</span></div></div>
+    <div class="lay"><div>${tiles || '<p class="note">No tests match these filters.</p>'}</div><aside class="side" id="tside" aria-live="polite"></aside></div></div>`;
+  tPanel(tSel);
+}
+function tPanel(i){
+  const t = S.tests[i]; if(!t || !$("tside")) return;
+  const w = worst(t), lv = t.values[t.values.length-1], d = DET[t.name] || {}, o = ORD[t.name], P = PLAIN[t.name];
+  const kw = (d.k || t.name.split(/[ ,(]/)[0]).toLowerCase();
+  const qs = kw.length>2 ? S.questions.filter(q=>(q.q+' '+q.why).toLowerCase().includes(kw)) : [];
+  const cs = (d.c||[]).map(id=>S.graph.conditions.find(x=>x.id===id)).filter(Boolean);
+  $("tside").innerHTML = `<button class="chip x-close" data-close="tside">Close</button>
+    <div class="ph"><div class="psym ${w}">${esc(SYM[t.name]||t.name.slice(0,3))}</div><div><h2 style="font-size:20px">${esc(t.name)}</h2><span class="pill ${lv.f}">Latest ${esc(lv.v)} ${esc(t.unit)} · ${lv.f==="n"?"in range":FL[lv.f].toLowerCase()}</span></div></div>
+    ${P ? `<div class="blk"><h3>In plain words</h3>${P.w.map(p=>`<p style="margin:0 0 8px">${esc(p)}</p>`).join('')}</div>${blk("For you", P.y)}` : blk("What it measures", t.explain)}
+    <div class="big" style="margin:14px 0 4px">${spec(t,true)}</div>
+    <div class="hist">${t.values.map(v=>`<div><span>${esc(v.d)}</span><span class="vv ${v.f}">${esc(v.v)} ${FL[v.f]||''}</span></div>`).join('')}<div><span>Normal range</span><span>${esc(t.range)}</span></div></div>
+    <div class="ordline ${o?'y':'n'}">${o?`✓ Ordered now · ${esc(o)}`:"✗ Not ordered yet"}</div>
+    ${blk("What this result means", d.why || (w==="n" ? "In range on every test so far." : "Outside the lab's range at least once."))}
+    ${blk("Possible causes", d.causes)}
+    ${blk("Recheck options", d.recheck || (o ? ["Being rechecked in the current orders."] : w==="n" ? ["No special recheck needed; routine care is enough."] : ["Ask a doctor to add it at the next draw."]))}
+    ${blk("Before pregnancy", d.preg)}
+    ${cs.length?`<div class="blk"><h3>Could point to</h3><div class="bar">${cs.map(c=>`<button class="chip" data-gocond="${c.id}">${esc(c.label)}</button>`).join('')}</div></div>`:''}
+    ${blk("Related questions for doctors", qs.map(q=>q.q))}`;
+}
+function map2(){
+  $("v-map").innerHTML = `<div style="display:grid;gap:14px"><p class="note" style="font-size:14px">Possibilities to rule in or out with your doctors, not diagnoses. Every finding has equal priority. Click a large circle to see why it is suspected from your history, the tests that settle it and what to do before pregnancy. Click a small dot to see what it points to.</p><div>${net3()}</div><aside class="side" id="cside" aria-live="polite"></aside><style>#cside{position:static!important;display:block!important;max-height:none!important;box-shadow:none!important;border-radius:10px!important;overflow:visible!important;width:auto!important}#cside .x-close{display:none!important}</style></div>`;
+}
+function condPanel(id, quiet){
+  const c = S.graph.conditions.find(x=>x.id===id); if(!c || !$("cside")) return;
+  const d = COND[id] || {}, fs = S.graph.findings.filter(f=>f.links.includes(id)).map(f=>f.label);
+  $("cside").innerHTML = `<button class="chip x-close" data-close="cside">Close</button><h2>${esc(c.label)}</h2><span class="pill x">Possibility · ${fs.length} linked finding${fs.length===1?'':'s'}</span>
+    ${blk("What it is", d.what)}${blk("Findings pointing here", fs)}${blk("From your history", d.hist)}${blk("Tests that settle it", d.tests)}${blk("What to do before pregnancy, and why", d.preg)}`;
+  if(!quiet){ $("cside").classList.add("open"); }
+}
+function findPanel(i){
+  const f = S.graph.findings[i]; if(!f || !$("cside")) return;
+  const cs = S.graph.conditions.filter(c=>f.links.includes(c.id));
+  $("cside").innerHTML = `<button class="chip x-close" data-close="cside">Close</button><h2>${esc(f.label)}</h2><span class="pill ${f.flag==='high'?'h':f.flag==='low'?'l':'x'}">Finding</span><div class="blk"><h3>Could point to</h3><div class="bar">${cs.map(c=>`<button class="chip" data-gocond="${c.id}">${esc(c.label)}</button>`).join('')}</div></div><p class="note" style="margin-top:10px">Tap a possibility for the full picture.</p>`;
+  $("cside").classList.add("open");
+}
+function defaultCond(){
+  const deg = {}; S.graph.findings.forEach(f=>f.links.forEach(id=>deg[id]=(deg[id]||0)+1));
+  const top = S.graph.conditions.slice().sort((a,b)=>(deg[b.id]||0)-(deg[a.id]||0))[0]; if(top) condPanel(top.id, true);
+}
+document.addEventListener("click", (e) => {
+  const b = e.target.closest && e.target.closest("button"); if(!b) return;
+  if(b.dataset.open){ const i = S.tests.findIndex(x=>x.name===b.dataset.open); if(i<0) return; tSel = i; if(location.hash!=="#results") location.hash = "#results"; tPanel(i); $("tside").classList.add("open"); return; }
+  if(b.dataset.tf){ tFam = b.dataset.tf; tilesView(); return; }
+  if(b.dataset.ts){ tSt = b.dataset.ts; tilesView(); return; }
+  if(b.dataset.rg){ rGroup = b.dataset.rg; results(); return; }
+  if(b.dataset.ti!==undefined){ tSel = +b.dataset.ti; document.querySelectorAll(".rt").forEach(x=>x.setAttribute("aria-pressed", x===b)); tPanel(tSel); $("tside").classList.add("open"); return; }
+  if(b.dataset.close){ $(b.dataset.close).classList.remove("open"); return; }
+  if(b.dataset.gocond){ const id = b.dataset.gocond; if(location.hash!=="#map") location.hash = "#map";
+    setTimeout(()=>{ const n = document.querySelector('.nd[data-c="'+id+'"]'); if(n) n.dispatchEvent(new MouseEvent('click',{bubbles:true})); else condPanel(id); }, 60); return; }
+});
+document.addEventListener("click", (e) => {
+  const n = e.target.closest && e.target.closest(".nd"); if(!n) return;
+  if(n.dataset.c) condPanel(n.dataset.c); else if(n.dataset.f!==undefined) findPanel(+n.dataset.f);
+});
+function gHist(){
+  const el = $("v-results"); if(!el) return;
+  const box = document.createElement("div");
+  box.className = "card"; box.style.marginTop = "14px";
+  box.innerHTML = `<h2>Scans and other tests</h2><div class="tl">${S.history.map(h=>`<div><time>${esc(h.d)}</time><span><p><b>${esc(h.t)}</b></p><p class="d">${esc(h.x)}</p></span></div>`).join("")}</div>${S.pending.length?`<h3 style="margin-top:6px">Still to do</h3><ul style="margin:0;padding-left:20px;display:grid;gap:4px">${S.pending.map(p=>`<li>${esc(p)}</li>`).join("")}</ul>`:''}`;
+  el.firstElementChild ? el.firstElementChild.appendChild(box) : el.appendChild(box);
+}
+
+function renderAll(){ regroup(); header(); questions(); results(); gHist(); history(); care(); map2(); drawNet(); defaultCond(); show(); }
+
+document.addEventListener("click", (e) => {
+  const t = e.target.closest("button"); if(!t) return;
+  if(t.dataset.qf){ qFilter=t.dataset.qf; questions(); return; }
+  if(t.dataset.qd){ qDoc=t.dataset.qd; questions(); return; }
+  if(t.id==="flagtoggle"){ onlyFlag=!onlyFlag; results(); return; }
+  if(t.dataset.net){
+    const [kind,i,net] = t.dataset.net.split(":");
+    const p = S[kind][+i]; p.network = net; p.checked = net==="Not checked" ? "" : today() + " (by you)";
+    care(); save(); return;
+  }
+  if(t.dataset.s){
+    const q = S.questions.find(x=>x.id===t.closest(".q").dataset.id);
+    q.status = t.dataset.s;
+    if(q.status!=="open" && !q.date) q.date = today();
+    if(q.status==="open") q.date = "";
+    header(); questions(); save();
+  }
+});
+document.addEventListener("change", (e) => {
+  const id = e.target.dataset && e.target.dataset.ans; if(!id) return;
+  const q = S.questions.find(x=>x.id===id); q.answer = e.target.value;
+  if(q.answer && q.status==="open"){ q.status="answered"; q.date = q.date || today(); header(); questions(); }
+  save();
+});
+document.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const f = e.target.id;
+  if(f==="addq"){
+    S.questions.push({id:"q"+Date.now(), doctor:$("nq-doc").value.trim(), q:$("nq-q").value.trim(), why:$("nq-why").value.trim(), status:"open", answer:"", date:""});
+    questions(); header();
+  } else if(f==="addr"){
+    const name=$("nr-test").value.trim(), d=$("nr-date").value.trim();
+    let t = S.tests.find(x=>x.name.toLowerCase()===name.toLowerCase());
+    if(!t){ t={name, unit:"", explain:"Added by you.", range:$("nr-range").value.trim(), group:"Added results", values:[]}; S.tests.push(t); }
+    if(!S.dates.includes(d)) S.dates.push(d);
+    t.values = t.values.filter(v=>v.d!==d); t.values.push({d, v:$("nr-val").value.trim(), f:$("nr-flag").value});
+    t.values.sort((a,b)=>S.dates.indexOf(a.d)-S.dates.indexOf(b.d));
+    results(); header();
+  } else if(f==="addc"){
+    const net=$("nc-net").value;
+    S[$("nc-kind").value].push({name:$("nc-name").value.trim(), role:$("nc-role").value.trim(), place:$("nc-place").value.trim(), phone:$("nc-phone").value.trim(), network:net, checked: net==="Not checked"?"":today()+" (by you)"});
+    care();
+  } else if(f==="addh"){
+    S.history.push({d:$("nh-d").value.trim(), t:$("nh-t").value.trim(), x:$("nh-x").value.trim()});
+    history();
+  } else return;
+  save();
+});
+
+
+
+window.addEventListener("hashchange", show);
+renderAll();
+(async () => {
+  try { ART = window.claude && window.claude.use ? await window.claude.use("artifact") : null; } catch(e){ ART = null; }
+  setSave(ART ? "Changes you make here are saved." : "");
+})();
+</script>
+</body>
+</html>
