@@ -952,29 +952,43 @@ function gGlance(){
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px">${GLANCE.map(g=>{const c=col[g.c];return `<div style="background:${c[1]};border:1px solid ${c[0]};border-left:5px solid ${c[0]};border-radius:10px;padding:10px 12px;display:grid;gap:3px"><span style="font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:${c[0]}">${c[2]} · ${esc(g.s)}</span><b style="font-size:15px">${esc(g.t)}</b><span style="font-size:13px;color:var(--ink)">${esc(g.d)}</span></div>`;}).join("")}</div></div>`;
 }
 
-const GSUPP = [
-  {g:"Taking now", c:"ok", n:"Magnesium glycinate", dose:"At night.", why:"His magnesium was 1.7 in Dec 2025, just under the 1.8 lower limit. Glycinate is a gentle form. Keep going and recheck magnesium with the next blood test."},
-  {g:"Taking now", c:"low", n:"Nature Made Iron 65 mg (shared bottle)", dose:"Every other day, started Nov 18, 2026.", why:"Ask Dr. Staddler before continuing. Gaurav's iron stores were normal (ferritin 97.8, range 30–400; transferrin saturation 19.3%). Only the single serum iron (58) was low, and that number changes a lot from day to day. People with normal iron levels gain nothing from iron pills, and men lose very little iron, so extra iron can build up over time. A US survey found younger men taking more than 32 mg a day had higher blood iron."},
-  {g:"From the household's supplements: fits him", c:"ok", n:"Kirkland Signature CoQ10 300 mg", dose:"1 softgel a day with a meal that has some fat.", why:"300 mg a day is the dose in a trial of 212 infertile men (Safarinejad 2009), which found better sperm count and movement. His semen analysis is not done yet, so this does not target a known problem."},
-  {g:"From the household's supplements: fits him", c:"ok", n:"Sports Research Omega-3 Fish Oil", dose:"As on the label (EPA 690 mg + DHA 310 mg per serving).", why:"In a 2011 double-blind trial of 238 infertile men, those taking omega-3 had higher total sperm count and concentration. Fish oil is also commonly used for heart health."},
-  {g:"From the household's supplements: ask first", c:"note", n:"Kirkland D3", dose:"Ask Dr. Staddler for the dose.", why:"His vitamin D was 32.1, just above the 31 lower limit. In a Danish trial of 307 infertile men with low vitamin D, vitamin D did not change semen quality, but it lowered fasting insulin. Worth discussing because his SHBG was low."},
-  {g:"From the household's supplements: ask first", c:"note", n:"Kirkland Quick Dissolve B12 5,000 mcg", dose:"Ask whether to recheck B12 first.", why:"His B12 was 243, in range (197–771) but near the low end, and B12 matters for sperm health. A recheck with folate would show whether he needs it."},
-  {g:"Planned", c:"note", n:"ProHealth NMN (shared bag)", dose:"Planned, after Nov 27.", why:"No trials of NMN on sperm or male fertility were found. Treat it as an experiment, not a fertility treatment."},
-  {g:"Options from his earlier research", c:"note", n:"NAC (N-acetylcysteine) 600 mg", dose:"600 mg a day for 3 months, if started.", why:"Three men's trials used 600 mg a day; the largest (468 men) found better semen measures. Decide after the semen analysis."},
-  {g:"Not for him", c:"high", n:"Nature Made Prenatal + DHA", dose:"", why:"Made for women before and during pregnancy (800 mcg folic acid, 27 mg iron). In the FAZST trial, high-dose folic acid with zinc for men did not improve semen quality or live births and raised sperm DNA damage."},
-  {g:"Not for him", c:"high", n:"Kirkland Calcium Citrate, Magnesium & Zinc + D3", dose:"", why:"He already takes magnesium, and the FAZST trial found extra zinc with folic acid did not help sperm. No sign he needs extra calcium."},
-  {g:"Not for him", c:"high", n:"Ashwagandha and shilajit", dose:"", why:"Wait until his cortisol is retested. Shilajit products can also carry heavy metals."}
+const GING = [
+  ["Taking now","Magnesium (glycinate)","Dose on his label, e.g. 200 mg","","","","","About 200 mg","Need 420 mg a day from food and pills together. Pills alone: up to 350 mg.","ok","Within limits","Keep at night. His magnesium was 1.7 (range 1.8–2.6); recheck with the next blood test."],
+  ["Taking now","Iron","","65 mg every other day (since Nov 18)","","","","65 mg on iron days (about 32 mg a day on average)","Need 8 mg a day. Upper limit 45 mg a day from all sources.","bad","Above the upper limit on iron days","Ask Dr. Staddler before continuing. His iron stores were normal (ferritin 97.8, range 30–400; transferrin saturation 19.3%)."],
+  ["Fits him","CoQ10","","","300 mg (Kirkland)","","","300 mg","No set daily need. Men's trials used 200–300 mg.","ok","Option","1 softgel a day with a meal that has fat. A trial of 212 infertile men on 300 mg found better sperm count and movement."],
+  ["Fits him","Omega-3 (EPA + DHA)","","","","EPA 690 mg + DHA 310 mg (Sports Research)","","1,000 mg","No set daily need.","ok","Option","In a trial of 238 infertile men, omega-3 raised sperm count and concentration."],
+  ["Ask first","Vitamin D3","","","","","2,000 IU (Kirkland D3)","2,000 IU","Need 600 IU a day. Upper limit 4,000 IU.","warn","Ask Dr. Staddler","His vitamin D was 32.1, just above the 31 low limit. In a trial of 307 infertile men, vitamin D did not change semen quality but lowered fasting insulin."],
+  ["Ask first","Vitamin B12","","","","","5,000 mcg (Kirkland, under the tongue)","5,000 mcg","Need 2.4 mcg a day. No upper limit set.","warn","Ask Dr. Staddler","His B12 was 243 (range 197–771), near the low end. Recheck with folate first."]
+];
+const GNOT = [
+  ["Nature Made Prenatal + DHA","Made for women before and during pregnancy (800 mcg folic acid, 27 mg iron). In the FAZST trial, high-dose folic acid with zinc did not improve men's semen quality or live births and raised sperm DNA damage."],
+  ["Kirkland Calcium Citrate, Magnesium & Zinc + D3","He already takes magnesium. In FAZST, extra zinc with folic acid did not help sperm. No sign he needs extra calcium."],
+  ["ProHealth NMN (shared bag, planned after Nov 27)","No trials of NMN on sperm or male fertility were found. An experiment, not a fertility treatment."],
+  ["NAC (N-acetylcysteine) 600 mg","An option from his earlier research: three men's trials used 600 mg a day for 3 months. Decide after the semen analysis."],
+  ["Ashwagandha and shilajit","Wait until his cortisol is retested. Shilajit products can also carry heavy metals."]
 ];
 function gSupps(){
   const el = document.getElementById("v-supps"); if(!el) return;
-  const groups = [...new Set(GSUPP.map(x=>x.g))];
+  const IBG = {ok:["#e3f4e8","#1e6b38"], bad:["#fbe1e1","#a32020"], warn:["#fdf0d2","#8a6100"]};
+  let g="", rows="";
+  GING.forEach(r=>{
+    if(r[0]!==g){ g=r[0]; rows+=`<tr><td colspan="10" style="background:#eef2f6;font-weight:700;color:#1d2b3a">${esc(g)}</td></tr>`; }
+    const c=v=>v?`<td style="background:#f3f8ff">${esc(v)}</td>`:`<td style="color:#b4bcc6;text-align:center">–</td>`;
+    const b=IBG[r[9]];
+    rows+=`<tr><td style="font-weight:600">${esc(r[1])}</td>${c(r[2])}${c(r[3])}${c(r[4])}${c(r[5])}${c(r[6])}<td style="font-weight:700">${esc(r[7])}</td><td style="color:#4a5563">${esc(r[8])}</td><td><span style="display:inline-block;border-radius:10px;padding:2px 8px;font-size:12px;font-weight:600;background:${b[0]};color:${b[1]}">${esc(r[10])}</span></td><td>${esc(r[11])}</td></tr>`;
+  });
   el.innerHTML = `<div style="display:grid;gap:14px">
-    <p class="note" style="font-size:14px">Which of the household's supplements could suit Gaurav. His semen analysis is not done yet, so nothing here targets a known problem. Bring this list to Dr. Staddler.</p>
-    ${groups.map(g=>`<h2>${esc(g)}</h2><div class="list">${GSUPP.filter(x=>x.g===g).map(x=>`<div class="q" style="border-left-color:var(--${x.c})"><div class="ques">${esc(x.n)}</div>${x.dose?`<p class="why"><b>Dose:</b> ${esc(x.dose)}</p>`:''}<p class="why"><b>Why:</b> ${esc(x.why)}</p></div>`).join("")}</div>`).join("")}
+    <p class="note" style="font-size:14px">Each row is one ingredient. A filled column shows which product it comes from. His semen analysis is not done yet, so nothing here targets a known problem. Bring this table to Dr. Staddler.</p>
+    <div class="tablewrap"><table style="min-width:1100px;font-size:13px;table-layout:fixed"><colgroup><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:7%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:11%"><col style="width:8%"><col style="width:20%"></colgroup><thead><tr><th>Ingredient</th><th>Magnesium glycinate<br><small>at night</small></th><th>Iron 65 mg<br><small>shared bottle</small></th><th>CoQ10<br><small>Kirkland</small></th><th>Fish oil<br><small>Sports Research</small></th><th>Other products</th><th>Total a day</th><th>Daily need and max</th><th>Check</th><th>Suggestion</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <h2>Not for him, or not now</h2>
+    <div class="tablewrap"><table style="font-size:13px"><thead><tr><th style="width:30%">Product</th><th>Why</th></tr></thead><tbody>${GNOT.map(r=>`<tr><td style="font-weight:600">${esc(r[0])}</td><td>${esc(r[1])}</td></tr>`).join("")}</tbody></table></div>
     <div class="card"><h2>Sources</h2><ul style="margin:0;padding-left:20px;display:grid;gap:4px;font-size:13px">
+      <li><a href="https://ods.od.nih.gov/factsheets/Iron%20-Consumer/">Iron: daily need and upper limit (NIH Office of Dietary Supplements)</a></li>
+      <li><a href="https://ods.od.nih.gov/factsheets/Magnesium-Consumer/">Magnesium: daily need and upper limit (NIH Office of Dietary Supplements)</a></li>
+      <li><a href="https://nutritionaloutlook.com/view/iom-conservatively-raises-dri-vitamin-d">Vitamin D: 600 IU need and 4,000 IU upper limit (IOM)</a></li>
+      <li><a href="https://www.msdmanuals.com/professional/multimedia/table/recommended-daily-intakes-for-vitamins">Vitamin B12 daily need (MSD Manual)</a></li>
       <li><a href="https://www.goodrx.com/classes/iron-supplements/iron">Iron supplements: who needs them (GoodRx)</a></li>
-      <li><a href="https://pubmed.ncbi.nlm.nih.gov/16280434/">Supplemental iron and iron levels in US adults (NHANES)</a></li>
-      <li><a href="https://pubmed.ncbi.nlm.nih.gov/21219381/">Omega-3 in infertile men, Safarinejad 2011 (Andrologia)</a></li>
+      <li><a href="https://pubmed.ncbi.nlm.nih.gov/21219381/">Omega-3 in infertile men, Safarinejad 2011</a></li>
       <li><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC6416049/table/CD007411-tblf-0020">Vitamin D trial in 307 infertile men, Blomberg Jensen 2018</a></li>
       <li><a href="https://www.physiciansweekly.com/?p=346696">Same trial: vitamin D and insulin</a></li>
       <li><a href="https://www.nichd.nih.gov/about/org/diphr/officebranch/eb/folic-acid-zinc">FAZST trial: folic acid and zinc in men (NICHD)</a></li>
