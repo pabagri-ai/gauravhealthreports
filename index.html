@@ -249,6 +249,123 @@ thead th.dth small.dlab{display:block;font-size:11px;font-weight:500;text-transf
 @media (max-width:760px){#cside{position:static!important;display:block!important;max-height:none!important;box-shadow:none!important;border-radius:10px!important}#cside .x-close{display:none!important}}
 @media (max-width:760px){.lay{grid-template-columns:1fr}.side{position:fixed;left:0;right:0;bottom:0;top:auto;max-height:72vh;border-radius:14px 14px 0 0;z-index:30;box-shadow:0 -8px 30px rgba(0,0,0,.2);display:none}.side.open{display:block}.x-close{display:inline-block}}
 </style>
+<style id="refresh-2026">
+/* ---- Refresh 2026: calm palette, softer cards, per-date marker colours ---- */
+:root{
+  --bg:#f3f5f8; --panel:#ffffff; --ink:#17222b; --muted:#5a6875; --line:#e2e7ec; --line2:#edf0f3;
+  --accent:#0f6e74; --accent-2:#0b5a5f; --accent-soft:#e6f3f2;
+  --low:#1c5fbf; --low-soft:#edf3fd; --high:#c2302a; --high-soft:#fdefed;
+  --ok:#1e7a4c; --ok-soft:#ebf6ef; --note:#935f00; --note-soft:#fdf4e0;
+  --zl:#c9dcf7; --zn:#ccead7; --zh:#f5cdc8;
+  --thead:#f8fafb; --grp:#f1f7f7; --hover:rgba(15,110,116,.035); --cday:#4b5866;
+  --hdr1:#e7f3f2; --hdr2:#f0effa;
+  --shadow-sm:0 1px 2px rgba(16,24,40,.05);
+  --shadow:0 1px 2px rgba(16,24,40,.04),0 6px 18px -6px rgba(16,24,40,.08);
+  --r:14px;
+  /* date colours, newest first (d0 = newest). --d* marker fill, --dt* text */
+  --d0:#7c3aed; --d1:#ea580c; --d2:#c2185b; --d3:#1e293b; --d4:#94a3b8; --d5:#0e7490;
+  --dt0:#6d28d9; --dt1:#c2410c; --dt2:#ad1457; --dt3:#1e293b; --dt4:#64748b; --dt5:#0e7490;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1416; --panel:#161d20; --ink:#e4ecee; --muted:#9aabb0; --line:#283437; --line2:#1f292c;
+  --accent:#5cc0c4; --accent-2:#86d4d7; --accent-soft:#143537;
+  --low:#86b4f2; --low-soft:#172840; --high:#f29189; --high-soft:#3b2022;
+  --ok:#7fd0a1; --ok-soft:#163224; --note:#e5b452; --note-soft:#382c11;
+  --zl:#22395c; --zn:#1f4430; --zh:#552a27;
+  --thead:#1a2225; --grp:#14292b; --hover:rgba(255,255,255,.03); --cday:#a9b6ba;
+  --hdr1:#132629; --hdr2:#1b1b2e; --shadow-sm:none; --shadow:none;
+  --d0:#a78bfa; --d1:#fb923c; --d2:#f06292; --d3:#e2e8f0; --d4:#7c8799; --d5:#67e8f9;
+  --dt0:#b9a2fb; --dt1:#fda466; --dt2:#f48aab; --dt3:#e2e8f0; --dt4:#97a2b3; --dt5:#67e8f9;
+}}
+:root[data-theme="dark"]{
+  --bg:#0f1416; --panel:#161d20; --ink:#e4ecee; --muted:#9aabb0; --line:#283437; --line2:#1f292c;
+  --accent:#5cc0c4; --accent-2:#86d4d7; --accent-soft:#143537;
+  --low:#86b4f2; --low-soft:#172840; --high:#f29189; --high-soft:#3b2022;
+  --ok:#7fd0a1; --ok-soft:#163224; --note:#e5b452; --note-soft:#382c11;
+  --zl:#22395c; --zn:#1f4430; --zh:#552a27;
+  --thead:#1a2225; --grp:#14292b; --hover:rgba(255,255,255,.03); --cday:#a9b6ba;
+  --hdr1:#132629; --hdr2:#1b1b2e; --shadow-sm:none; --shadow:none;
+  --d0:#a78bfa; --d1:#fb923c; --d2:#f06292; --d3:#e2e8f0; --d4:#7c8799; --d5:#67e8f9;
+  --dt0:#b9a2fb; --dt1:#fda466; --dt2:#f48aab; --dt3:#e2e8f0; --dt4:#97a2b3; --dt5:#67e8f9;
+}
+body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;line-height:1.55}
+.wrap{padding:28px 24px 72px;gap:22px}
+/* header becomes a soft hero card */
+.wrap>header{background:linear-gradient(120deg,var(--hdr1) 0%,var(--panel) 55%,var(--hdr2) 100%);border:1px solid var(--line);border-radius:18px;padding:24px 28px 20px;box-shadow:var(--shadow-sm);gap:8px}
+h1{font-size:32px;letter-spacing:-.012em;line-height:1.15}
+h2{letter-spacing:-.005em}
+.wrap>header .sub{font-size:14.5px;max-width:110ch}
+.save:empty{display:none}
+/* cards */
+.tile,.attn,.card,.q,.dcard,.sc,.tl,.cidx,.tablewrap{border-radius:var(--r);border-color:var(--line);box-shadow:var(--shadow-sm)}
+.tile{padding:16px 18px}
+.tile span{font-size:13px}
+.attn{padding:16px 22px;border-left-width:4px;background:linear-gradient(90deg,var(--high-soft) 0,var(--panel) 260px)}
+.attn ul{gap:6px}
+/* tab bar: segmented pills */
+.wrap>nav{border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:5px;gap:4px;box-shadow:var(--shadow-sm)}
+.wrap>nav a{border:0;margin:0;border-radius:10px;padding:8px 15px;font-size:14.5px;color:var(--muted);transition:background .15s,color .15s}
+.wrap>nav a:hover{background:var(--bg);color:var(--ink)}
+.wrap>nav a[aria-current="page"]{background:var(--accent);color:#fff;box-shadow:0 1px 3px rgba(15,110,116,.35)}
+:root[data-theme="dark"] .wrap>nav a[aria-current="page"]{color:#0f1416}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .wrap>nav a[aria-current="page"]{color:#0f1416}}
+/* chips and buttons */
+.chip{padding:6px 13px;transition:border-color .15s,background .15s}
+.chip:hover{border-color:var(--accent)}
+.btn{border-radius:8px}
+textarea,input,select{border-radius:8px}
+/* tables */
+.tablewrap{box-shadow:var(--shadow)}
+th,td{border-bottom-color:var(--line2)}
+thead th{background:var(--thead);color:var(--muted);font-size:11.5px;font-weight:700;letter-spacing:.06em;border-bottom:1px solid var(--line);padding-top:12px;padding-bottom:11px}
+tbody tr.grp td{background:var(--grp);color:var(--accent-2);font-size:13px;letter-spacing:.01em;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:9px 14px}
+tbody tr:not(.grp):hover>td{box-shadow:inset 0 0 0 999px var(--hover)}
+td.v{font-size:15px}
+td.v .fl{font-size:9.5px;letter-spacing:.05em;border:1px solid currentColor;border-radius:999px;padding:0 6px;margin-left:6px;vertical-align:2px}
+td.rng{font-size:13px}
+.crng{color:var(--muted)}
+.cday{color:var(--cday);border-left:2px solid var(--line);padding-left:6px;margin-top:5px}
+/* Test results: refined row status stripe; in-range rows stay neutral */
+body #v-results td.tcell{border-left:0;padding-left:16px;--stripe:var(--ok);background:var(--panel);box-shadow:inset 4px 0 0 var(--stripe)}
+body #v-results td.tcell.l{--stripe:var(--low);background:var(--low-soft)}
+body #v-results td.tcell.h{--stripe:var(--high);background:var(--high-soft)}
+body #v-results td.tcell.x{--stripe:var(--note);background:var(--note-soft)}
+body #v-results tbody tr:not(.grp):hover>td.tcell{box-shadow:inset 4px 0 0 var(--stripe),inset 0 0 0 999px var(--hover)}
+body #v-results .tnm2{font-size:19.5px;letter-spacing:-.005em}
+body #v-results td.tcell small{line-height:1.45}
+body #v-results td.barc{padding-top:18px;min-width:250px}
+body #v-results .side{border-radius:16px}
+.side{border-radius:var(--r)}
+/* range bar */
+.spec{height:10px}
+.big .spec{height:12px}
+.mk{background:var(--mc,var(--ink));width:4px;height:16px;top:-3px;border-radius:3px;box-shadow:0 0 0 1.5px var(--panel)}
+.mk.new{width:6px;height:20px;top:-5px;z-index:2}
+.big .mk{height:20px;top:-4px}
+.big .mk.new{height:26px;top:-7px}
+.speclab{margin-top:6px}
+/* value + date stack under the bar: newest on top, colour = marker colour */
+.mstack{display:grid;grid-template-columns:auto auto auto;justify-content:center;column-gap:6px;row-gap:1px;margin-top:13px;font-size:11.5px;line-height:1.45;font-variant-numeric:tabular-nums;white-space:nowrap}
+.mstack .ml{display:contents}
+.mstack .ml>i{width:8px;height:8px;border-radius:50%;background:var(--mc);align-self:center}
+.mstack .ml>b{color:var(--mt);text-align:right;font-weight:700}
+.mstack .ml>span{color:var(--mt);font-weight:500}
+.mstack .ml.new>span{font-weight:700}
+.speclab+.mstack{margin-top:8px}
+/* column key: dot + top stripe in the date's colour */
+thead th.dth{box-shadow:inset 0 3px 0 var(--mc)}
+.dsw{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--mc);margin:0 6px 0 0;vertical-align:0}
+.hdot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--mc);margin-right:7px;vertical-align:0}
+/* pop-up history list */
+.hist div{border-bottom-style:solid;border-bottom-color:var(--line2);padding:5px 0}
+.psym{border-radius:12px}
+/* glance cards (Gaurav): drop the heavy outline, keep the colour stripe */
+#v-glance div[style*="border-left:5px"]{border-top-width:0!important;border-right-width:0!important;border-bottom-width:0!important;border-left-width:4px!important;border-radius:12px!important;box-shadow:var(--shadow-sm);padding:12px 14px!important}
+/* misc soft surfaces */
+.rt{border-radius:12px}
+.legend{gap:8px 16px}
+@media (max-width:520px){.wrap>header{padding:18px}h1{font-size:25px}}
+</style>
 </head>
 <style>#addq,#addr,#addc,#addh{display:none!important}</style>
 <body>
@@ -357,6 +474,11 @@ function questions(){
 const CNOTE = {"Fasting glucose": {"Nov 2025 (US)": "Fasting not recorded", "Nov 2026 (UW)": "Fasting confirmed"}, "LDL cholesterol": {"Nov 2025 (US)": "Measured directly", "Nov 2026 (UW)": "Calculated (Nov 2025 was measured directly); fasting"}, "Platelets": {"Nov 2025 (US)": "234,000 per µL"}, "Non-HDL cholesterol": {"Nov 2026 (UW)": "Heart goal under 130"}, "Lymphocytes": {"Nov 2025 (US)": "Labcorp sets no range for this percent. The actual count is in range."}};
 const DNOTE = {"Mar 2023": "MedPlus, India", "Nov 2025 (US)": "Labcorp, US", "Dec 2025": "MedPlus, India", "Nov 2026 (UW)": "UW Health, US"};
 const dmon = d => d.replace(/ \(.*\)$/, "");
+/* refresh-2026: one colour per test date, newest = rank 0 (purple) */
+const DMN = "JanFebMarAprMayJunJulAugSepOctNovDec";
+const dkey = d => { const m = String(d).match(/([A-Za-z]{3})[a-z]*\.?\s+(\d{4})/); if(!m) return -1; const k = DMN.indexOf(m[1][0].toUpperCase()+m[1].slice(1,3).toLowerCase()); return (+m[2])*12 + (k<0?0:k/3); };
+const DSORT = () => ((S&&S.dates)||[]).map((d,i)=>({d,i,k:dkey(d)})).sort((a,b)=>(b.k-a.k)||(b.i-a.i)).map(o=>o.d);
+const drank = d => { const k = DSORT().indexOf(d); return (k<0 ? 4 : k) % 6; };
 function results(){
   const dates = S.dates;
   let rows = "", grp = null;
@@ -377,7 +499,7 @@ function results(){
     <div class="bar">
       <button class="chip" id="flagtoggle" aria-pressed="${onlyFlag}">Only show tests that were ever out of range</button>
     </div>
-    <div class="legend"><span><i style="background:var(--low-soft);border:1px solid var(--low)"></i>Low</span><span><i style="background:var(--high-soft);border:1px solid var(--high)"></i>High</span><span><i style="background:var(--note-soft);border:1px solid var(--note)"></i>Can't be read as is</span><span><i style="background:var(--ok-soft);border:1px solid var(--ok)"></i>In range</span><span><i style="background:var(--zl);width:22px;height:8px;border-radius:4px"></i>Low zone</span><span><i style="background:var(--zn);width:22px;height:8px;border-radius:4px"></i>Normal zone</span><span><i style="background:var(--zh);width:22px;height:8px;border-radius:4px"></i>High zone</span><span><i style="background:var(--ink);width:4px;height:14px;border-radius:2px"></i>Latest result</span><span><i style="background:var(--ink);opacity:.35;width:4px;height:14px;border-radius:2px"></i>Earlier results</span><span>Click a test name for the full explanation.</span></div>
+    <div class="legend"><span><i style="background:var(--low-soft);border:1px solid var(--low)"></i>Low</span><span><i style="background:var(--high-soft);border:1px solid var(--high)"></i>High</span><span><i style="background:var(--note-soft);border:1px solid var(--note)"></i>Can't be read as is</span><span><i style="background:var(--ok-soft);border:1px solid var(--ok)"></i>In range</span><span><i style="background:var(--zl);width:22px;height:8px;border-radius:4px"></i>Low zone</span><span><i style="background:var(--zn);width:22px;height:8px;border-radius:4px"></i>Normal zone</span><span><i style="background:var(--zh);width:22px;height:8px;border-radius:4px"></i>High zone</span><span><i style="background:var(--d0);width:6px;height:14px;border-radius:2px"></i>Latest result</span><span>${DSORT().slice(1).map(d=>`<i style="background:var(--d${drank(d)});width:9px;height:9px;border-radius:50%;margin-right:3px"></i>`).join("")}Earlier results</span><span>Click a test name for the full explanation.</span></div>
     <style>
      #v-results td.tcell{min-width:190px;border-left:4px solid var(--ok);background:var(--ok-soft)}
      #v-results td.tcell.l{border-left-color:var(--low);background:var(--low-soft)}#v-results td.tcell.h{border-left-color:var(--high);background:var(--high-soft)}#v-results td.tcell.x{border-left-color:var(--note);background:var(--note-soft)}
@@ -393,7 +515,7 @@ function results(){
      #v-results .x-close{display:inline-block}
     </style>
     <div class="tablewrap"><table>
-      <thead><tr><th>Test</th><th>Normal range</th><th>Results on the range</th>${dates.map(d=>`<th class="dth">${esc(dmon(d))}${DNOTE[d]?`<small class="dlab">${esc(DNOTE[d])}</small>`:""}</th>`).join("")}<th>Labs ordered now</th><th>Questions to ask</th></tr></thead>
+      <thead><tr><th>Test</th><th>Normal range</th><th>Results on the range</th>${dates.map(d=>`<th class="dth" style="--mc:var(--d${drank(d)})"><i class="dsw" aria-hidden="true"></i>${esc(dmon(d))}${DNOTE[d]?`<small class="dlab">${esc(DNOTE[d])}</small>`:""}</th>`).join("")}<th>Labs ordered now</th><th>Questions to ask</th></tr></thead>
       <tbody>${rows}</tbody>
     </table></div><aside class="side" id="tside" aria-live="polite"></aside>
     <form class="card" id="addr">
@@ -785,12 +907,11 @@ function spec(t, big, tm){
   const s = scale(t);
   if(!s) return `<div class="spec"><span class="none"></span></div><div class="speclab"><span>No number range to plot</span></div>`;
   const z = s.rg.lo!==null ? `<span class="zl" style="width:${s.a}%"></span><span class="zn" style="width:${s.b-s.a}%"></span><span class="zh" style="width:${100-s.b}%"></span>` : `<span class="zn" style="width:${s.b}%;border-radius:5px 0 0 5px"></span><span class="zh" style="width:${100-s.b}%"></span>`;
-  const vs = t.values.map(v=>({v, n:numv(v.v)})).filter(o=>o.n!==null);
-  const row = vs.map((o,i)=>i%2); let nr = 2;
-  if(tm){ const ends = []; vs.map((o,i)=>({i,x:s.p(o.n)})).sort((a,b)=>a.x-b.x).forEach(o=>{ let r = ends.findIndex(e=>o.x-e>=34); if(r<0){ r = ends.length; ends.push(0); } ends[r] = o.x; row[o.i] = r; }); nr = Math.max(1, ends.length); }
-  const mk = vs.map((o,i)=>`<i class="mk${i<vs.length-1?' old':''}" style="left:${s.p(o.n)}%" title="${esc(o.v.d)}: ${esc(o.v.v)}"></i>${big?`<span class="mlab" style="left:${s.p(o.n)}%;top:${20+row[i]*14}px;transform:translateX(${s.p(o.n)<20?-s.p(o.n)*2.5:s.p(o.n)>80?-50-(s.p(o.n)-80)*2.5:-50}%)">${tm ? '<b>'+esc(o.v.v)+'</b> '+esc(dmon(o.v.d)) : esc(dmon(o.v.d))}</span>`:''}`).join('');
-  if(tm) return `<div class="spec">${z}${mk}</div><div style="height:${10+nr*14}px"></div>`;
-  return `<div class="spec">${z}${mk}</div><div class="speclab"${big?' style="margin-top:30px"':''}><span>${s.rg.lo!==null?'low &lt; '+s.rg.lo:''}</span><span>${s.rg.hi!==null?'high &gt; '+s.rg.hi:''}</span></div>`;
+  const vs = t.values.map((v,i)=>({v, i, n:numv(v.v), r:drank(v.d)})).filter(o=>o.n!==null).sort((a,b)=>(b.r-a.r)||(a.i-b.i));
+  const mk = vs.map(o=>`<i class="mk${o.r===0?' new':''}" style="left:${s.p(o.n)}%;--mc:var(--d${o.r})" title="${esc(o.v.d)}: ${esc(o.v.v)}"></i>`).join('');
+  const st = big && vs.length ? `<div class="mstack">${vs.slice().reverse().map(o=>`<span class="ml${o.r===0?' new':''}" style="--mc:var(--d${o.r});--mt:var(--dt${o.r})"><i></i><b>${esc(o.v.v)}</b><span>${esc(dmon(o.v.d))}</span></span>`).join('')}</div>` : '';
+  if(tm) return `<div class="spec">${z}${mk}</div>${st}`;
+  return `<div class="spec">${z}${mk}</div><div class="speclab"><span>${s.rg.lo!==null?'low &lt; '+s.rg.lo:''}</span><span>${s.rg.hi!==null?'high &gt; '+s.rg.hi:''}</span></div>${st}`;
 }
 function blk(title, x){
   if(!x || (Array.isArray(x) && !x.length)) return '';
@@ -809,7 +930,7 @@ function tilesView(){
   const tiles = [...new Set(S.tests.map(t=>t.group))].map(g=>{ const h = S.tests.map((t,i)=>t.group===g?tl[i]:'').join(''); return h ? `<div class="gsec"><h3 class="gh">${esc(g)}</h3><div class="rgrid">${h}</div></div>` : ''; }).join('');
   $("v-tiles").innerHTML = `<div style="display:grid;gap:12px">
     <div class="bar">${ch("ts","all","All results",tSt)}${ch("ts","abn","Ever out of range",tSt)}${ch("ts","ord","Ordered now",tSt)}${ch("ts","nord","Not ordered",tSt)}</div>
-    <div class="cidx"><div><b>Tile colour</b><span><i style="background:var(--low-soft);border-top:4px solid var(--low)"></i>Was low</span><span><i style="background:var(--high-soft);border-top:4px solid var(--high)"></i>Was high</span><span><i style="background:var(--note-soft);border-top:4px solid var(--note)"></i>Can't be read as drawn</span><span><i style="background:var(--ok-soft);border-top:4px solid var(--ok)"></i>Always in range</span></div><div><b>Range bar</b><span><i class="bar-i" style="background:var(--zl)"></i>Low zone</span><span><i class="bar-i" style="background:var(--zn)"></i>Normal zone</span><span><i class="bar-i" style="background:var(--zh)"></i>High zone</span><span><i class="mk-i"></i>Latest result</span><span><i class="mk-i" style="opacity:.35"></i>Earlier results</span></div><div><b>Labs</b><span style="color:var(--ok);font-weight:600">✓ Ordered now</span><span style="font-weight:600">✗ Not ordered</span></div></div>
+    <div class="cidx"><div><b>Tile colour</b><span><i style="background:var(--low-soft);border-top:4px solid var(--low)"></i>Was low</span><span><i style="background:var(--high-soft);border-top:4px solid var(--high)"></i>Was high</span><span><i style="background:var(--note-soft);border-top:4px solid var(--note)"></i>Can't be read as drawn</span><span><i style="background:var(--ok-soft);border-top:4px solid var(--ok)"></i>Always in range</span></div><div><b>Range bar</b><span><i class="bar-i" style="background:var(--zl)"></i>Low zone</span><span><i class="bar-i" style="background:var(--zn)"></i>Normal zone</span><span><i class="bar-i" style="background:var(--zh)"></i>High zone</span><span><i class="mk-i" style="background:var(--d0);width:6px"></i>Latest result</span><span>${DSORT().slice(1).map(d=>`<i class="dot" style="background:var(--d${drank(d)});width:9px;height:9px"></i>`).join("")}Earlier results</span></div><div><b>Labs</b><span style="color:var(--ok);font-weight:600">✓ Ordered now</span><span style="font-weight:600">✗ Not ordered</span></div></div>
     <div class="lay"><div>${tiles || '<p class="note">No tests match these filters.</p>'}</div><aside class="side" id="tside" aria-live="polite"></aside></div></div>`;
   tPanel(tSel);
 }
@@ -823,7 +944,7 @@ function tPanel(i){
     <div class="ph"><div class="psym ${w}">${esc(SYM[t.name]||t.name.slice(0,3))}</div><div><h2 style="font-size:20px">${esc(t.name)}</h2><span class="pill ${lv.f}">Latest ${esc(lv.v)} ${esc(t.unit)} · ${lv.f==="n"?"in range":FL[lv.f].toLowerCase()}</span></div></div>
     ${P ? `<div class="blk"><h3>What it means</h3>${P.w.map(p=>`<p style="margin:0 0 8px">${esc(p)}</p>`).join('')}</div>${blk("What it means for Gaurav", P.y)}` : blk("What it measures", t.explain)}
     <div class="big" style="margin:14px 0 4px">${spec(t,true)}</div>
-    <div class="hist">${t.values.map(v=>`<div><span>${esc(dmon(v.d))}${DNOTE[v.d]?` · ${esc(DNOTE[v.d])}`:''}</span><span class="vv ${v.f}">${esc(v.v)} ${FL[v.f]||''}${v.r?`<small class="crng">Lab range ${esc(v.r)}</small>`:''}</span></div>`).join('')}<div><span>Normal range</span><span>${esc(t.range)}</span></div></div>
+    <div class="hist">${t.values.map(v=>`<div><span><i class="hdot" style="--mc:var(--d${drank(v.d)})"></i>${esc(dmon(v.d))}${DNOTE[v.d]?` · ${esc(DNOTE[v.d])}`:''}</span><span class="vv ${v.f}">${esc(v.v)} ${FL[v.f]||''}${v.r?`<small class="crng">Lab range ${esc(v.r)}</small>`:''}</span></div>`).join('')}<div><span>Normal range</span><span>${esc(t.range)}</span></div></div>
     <div class="ordline ${o?'y':'n'}">${o?`✓ Ordered now · ${esc(o)}`:"✗ Not ordered yet"}</div>
     ${blk("What this result means", d.why || (w==="n" ? "In range on every test so far." : "Outside the lab's range at least once."))}
     ${blk("Possible causes", d.causes)}
