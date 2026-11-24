@@ -366,6 +366,46 @@ thead th.dth{box-shadow:inset 0 3px 0 var(--mc)}
 .legend{gap:8px 16px}
 @media (max-width:520px){.wrap>header{padding:18px}h1{font-size:25px}}
 </style>
+<style id="scale-2026">
+/* ---- scale-2026: results for decades ---- */
+:root{--dga:#8f969d;--dgb:#dfe3e7}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--dga:#8a949b;--dgb:#3a4448}}
+:root[data-theme="dark"]{--dga:#8a949b;--dgb:#3a4448}
+#v-results .rwrap{overflow:auto;max-height:calc(100vh - 28px);position:relative}
+#v-results table.rtab{border-collapse:separate;border-spacing:0}
+#v-results .rtab thead th{position:sticky;top:0;z-index:6}
+#v-results .rtab thead th:first-child{left:0;z-index:8;box-shadow:inset -1px 0 0 var(--line)}
+#v-results .rtab td.tcell{position:sticky;left:0;z-index:5;box-shadow:inset 4px 0 0 var(--stripe),inset -1px 0 0 var(--line)}
+body #v-results .rtab tbody tr:not(.grp):hover>td.tcell{box-shadow:inset 4px 0 0 var(--stripe),inset -1px 0 0 var(--line),inset 0 0 0 999px var(--hover)}
+#v-results .rtab .spec{isolation:isolate}
+#v-results .rtab .gstk{position:sticky;left:16px;display:inline-block}
+#v-results .rtab .dnm,#v-results .rtab .crng .nw{white-space:nowrap}
+/* 6+ date columns: let lab names and lab ranges wrap so the newest column stays in view */
+#v-results .rtab.many thead th.dth{white-space:normal;min-width:92px}
+#v-results .rtab.many .crng,#v-results .rtab.many .cday{width:auto;min-width:80px;max-width:120px}
+#v-results .rtab.many td.barc{min-width:236px}
+.dctl{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;font-size:13px;color:var(--muted)}
+.dctl .dmsg{white-space:nowrap}
+.dctl .lnk{font:inherit;font-weight:600;color:var(--accent);background:none;border:0;padding:2px 2px;cursor:pointer;text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px}
+.dctl .lnk:hover{color:var(--accent-2)}
+.dctl{min-width:0}
+.dyrs{display:flex;gap:6px;overflow-x:auto;flex:1 1 320px;min-width:0;contain:inline-size;padding:2px 1px 4px;scrollbar-width:thin}
+.dyrs .chip{padding:3px 10px;font-size:12.5px;white-space:nowrap;flex:none}
+.chip[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-2);font-weight:600}
+/* older results: thinner markers, graded grey (colour set per date) */
+.mk.old{opacity:1;width:3px;height:12px;top:-1px;box-shadow:0 0 0 1px var(--panel)}
+.big .mk.old{height:14px;top:-1px}
+.lro{position:absolute;top:-4px;bottom:-4px;border:1.5px dashed var(--d0);border-radius:6px;opacity:.5;pointer-events:none;height:auto!important;box-sizing:border-box}
+.mstack .ml.x{display:none}
+.mstack.all .ml.x{display:contents}
+.mstack .mmore{grid-column:1/-1;justify-self:center;font:inherit;font-size:11px;font-weight:600;color:var(--accent);background:none;border:0;border-radius:6px;padding:1px 6px;margin-top:2px;cursor:pointer}
+.mstack .mmore:hover{text-decoration:underline;text-underline-offset:2px}
+/* pop-up history: scroll inside when long, keep the normal-range line visible */
+.side .hist{max-height:min(46vh,520px);overflow:auto;padding-right:4px}
+.side .hist>div:last-child{position:sticky;bottom:0;background:var(--panel);font-weight:600}
+.hist .crng{display:block;text-align:right}
+@media (max-width:640px){#v-results .rtab td.tcell{position:static}#v-results .rtab thead th:first-child{left:auto}}
+</style>
 </head>
 <style>#addq,#addr,#addc,#addh{display:none!important}</style>
 <body>
@@ -476,11 +516,73 @@ const DNOTE = {"Mar 2023": "MedPlus, India", "Nov 2025 (US)": "Labcorp, US", "De
 const dmon = d => d.replace(/ \(.*\)$/, "");
 /* refresh-2026: one colour per test date, newest = rank 0 (purple) */
 const DMN = "JanFebMarAprMayJunJulAugSepOctNovDec";
-const dkey = d => { const m = String(d).match(/([A-Za-z]{3})[a-z]*\.?\s+(\d{4})/); if(!m) return -1; const k = DMN.indexOf(m[1][0].toUpperCase()+m[1].slice(1,3).toLowerCase()); return (+m[2])*12 + (k<0?0:k/3); };
-const DSORT = () => ((S&&S.dates)||[]).map((d,i)=>({d,i,k:dkey(d)})).sort((a,b)=>(b.k-a.k)||(b.i-a.i)).map(o=>o.d);
-const drank = d => { const k = DSORT().indexOf(d); return (k<0 ? 4 : k) % 6; };
+/* scale-2026: dkey = yyyymmdd from "Nov 2025 (US)", "Nov 12, 2025" or "2025-11-12"; -1 if unreadable */
+const dkey = d => { const s = String(d); let m = s.match(/(\d{4})-(\d{1,2})(?:-(\d{1,2}))?/); if(m) return (+m[1])*10000 + (+m[2])*100 + (+(m[3]||0));
+  m = s.match(/([A-Za-z]{3})[a-z]*\.?\s+(?:(\d{1,2})(?:st|nd|rd|th)?,?\s+)?(\d{4})/); if(!m) return -1; const k = DMN.indexOf(m[1][0].toUpperCase()+m[1].slice(1,3).toLowerCase()); return (+m[3])*10000 + (k<0?0:k/3+1)*100 + (+(m[2]||0)); };
+let _DC = null, _DV = -1;
+/* newest first; ties (same month, two labs) go by position in S.dates, later = newer */
+const DSORT = () => { const a = (S&&S.dates)||[];
+  if(_DC && _DC.a===a && _DC.n===a.length && _DC.z===a[a.length-1]) return _DC.list;
+  const list = a.map((d,i)=>({d,i,k:dkey(d)})).sort((x,y)=>(y.k-x.k)||(y.i-x.i)).map(o=>o.d), rk = {};
+  list.forEach((d,i)=>{ if(!(d in rk)) rk[d] = i; });
+  _DC = {a, n:a.length, z:a[a.length-1], list, rk}; dvars(list.length); return list; };
+const dinv = () => { _DC = null; };
+/* rank 0 = newest (purple); 1-4 keep their colours; 5+ get a graded grey */
+const drank = d => { DSORT(); const k = _DC.rk[d]; return k===undefined ? Math.max(4, _DC.list.length) : k; };
+function dvars(n){ if(n===_DV) return; _DV = n; let c = '';
+  for(let r=5; r<=Math.max(n,5); r++){ const p = n>6 ? Math.round((r-5)/(n-6)*100) : 0; c += `--d${r}:color-mix(in srgb,var(--dgb) ${Math.min(p,100)}%,var(--dga));--dt${r}:var(--muted);`; }
+  let st = document.getElementById("dgrey"); if(!st){ st = document.createElement("style"); st.id = "dgrey"; document.head.appendChild(st); }
+  st.textContent = `:root:root:root{${c}}`; }
+const DNEW = a => a.slice().sort((x,y)=>drank(x.d)-drank(y.d));
+const dyr = d => { const k = dkey(d); return k>0 ? String(Math.floor(k/10000)) : ""; };
+/* put every date a result uses into S.dates, keep S.dates and each test's values oldest -> newest */
+function dnorm(){
+  if(S.dnote) for(const k in S.dnote) if(!DNOTE[k]) DNOTE[k] = S.dnote[k];
+  const seen = new Set(S.dates); S.tests.forEach(t=>t.values.forEach(v=>{ if(!seen.has(v.d)){ seen.add(v.d); S.dates.push(v.d); } }));
+  const ix = new Map(S.dates.map((d,i)=>[d,i])), key = d => [dkey(d), ix.get(d)];
+  const cmp = (a,b) => { const x = key(a), y = key(b); return (x[0]-y[0]) || (x[1]-y[1]); };
+  S.dates.sort(cmp); S.tests.forEach(t=>t.values.sort((a,b)=>cmp(a.d,b.d))); dinv();
+}
+let rAll = false, rYr = "all";
+/* date columns shown in the results table, newest -> oldest (left to right) */
+function DCOLS(){ const all = DSORT().slice();
+  if(rYr!=="all"){ const f = all.filter(d=>dyr(d)===rYr); if(f.length) return f; rYr = "all"; }
+  return rAll ? all : all.slice(0,6); }
+function DCTRL(){ const n = DSORT().length, ys = [...new Set(DSORT().map(dyr).filter(Boolean))];
+  let msg;
+  if(rYr!=="all"){ const k = DCOLS().length; msg = `Showing ${k} date${k===1?'':'s'} from ${rYr} · <button class="lnk" data-ryr="all">Show all years</button>`; }
+  else if(n<=6) msg = `Showing all ${n} date${n===1?'':'s'}`;
+  else msg = rAll ? `Showing all ${n} dates · <button class="lnk" data-rall="0">Show the last 6 only</button>` : `Showing the last 6 dates · <button class="lnk" data-rall="1">Show all ${n} dates</button>`;
+  const yr = ys.length>1 ? `<div class="dyrs" role="group" aria-label="Show one year"><button class="chip" data-ryr="all" aria-pressed="${rYr==="all"}">All years</button>${ys.map(y=>`<button class="chip" data-ryr="${y}" aria-pressed="${rYr===y}">${y}</button>`).join('')}</div>` : '';
+  return `<div class="dctl"><span class="dmsg">${msg}</span>${yr}</div>`; }
+const DLEG = c => { const a = DSORT(), dot = s => c ? `<i class="dot" style="${s}"></i>` : `<i style="${s};border-radius:50%;margin-right:3px"></i>`;
+  return a.slice(1,5).map(d=>dot(`background:var(--d${drank(d)});width:9px;height:9px`)).join('') + (a.length>5 ? (c ? `<i class="dot" style="background:linear-gradient(90deg,var(--dga),var(--dgb));width:22px;height:9px;border-radius:5px"></i>` : `<i style="background:linear-gradient(90deg,var(--dga),var(--dgb));width:22px;height:9px;border-radius:5px;margin-right:3px"></i>`) : ''); };
+/* the row's newest result: its lab's own printed range as a dashed outline, only when it is a plain range and differs */
+function LRO(s, vs){ const o = vs[vs.length-1]; if(!o || !o.v.r) return '';
+  const x = String(o.v.r).replace(/\([^)]*\)/g,'').trim();
+  if(!/^(under\s*)?[\d.,]+(\s*[–-]\s*[\d.,]+|\s*or more)?$/i.test(x)) return '';
+  const g = parseRange(x); if(g.lo===null && g.hi===null) return '';
+  const a = g.lo!==null ? s.p(g.lo) : 0, b = g.hi!==null ? s.p(g.hi) : 100;
+  if(Math.abs(a-s.a)<2 && Math.abs(b-s.b)<2) return '';
+  return `<span class="lro" style="left:${a}%;width:${b-a}%" title="${esc(dmon(o.v.d))}${DNOTE[o.v.d]?' · '+esc(DNOTE[o.v.d]):''} lab range: ${esc(o.v.r)}"></span>`; }
+document.addEventListener("click", e => { const b = e.target.closest && e.target.closest("[data-rall],[data-ryr],[data-mmore]"); if(!b) return;
+  if(b.dataset.mmore!==undefined){ const m = b.closest(".mstack"), on = m.classList.toggle("all"); b.textContent = on ? "Show fewer" : b.dataset.mmore; b.setAttribute("aria-expanded", on); return; }
+  if(b.dataset.rall!==undefined){ rAll = b.dataset.rall==="1"; rYr = "all"; } else rYr = b.dataset.ryr;
+  const y = window.scrollY; results(); window.scrollTo(0, y); });
+/* add-a-result form: runs before the older submit handler and replaces it for this form */
+window.addEventListener("submit", e => { if(!e.target || e.target.id!=="addr") return;
+  e.preventDefault(); e.stopImmediatePropagation();
+  const g = id => ($(id) ? $(id).value.trim() : ""), name = g("nr-test"), d = g("nr-date"), lab = g("nr-lab"), lr = g("nr-labr");
+  if(!name || !d) return;
+  let t = S.tests.find(x=>x.name.toLowerCase()===name.toLowerCase());
+  if(!t){ t = {name, unit:"", explain:"Added by you.", range:g("nr-range")||lr, group:"Added results", values:[]}; S.tests.push(t); }
+  if(!S.dates.includes(d)) S.dates.push(d);
+  if(lab){ DNOTE[d] = lab; (S.dnote = S.dnote || {})[d] = lab; }
+  t.values = t.values.filter(v=>v.d!==d); const nv = {d, v:g("nr-val"), f:g("nr-flag")||"n"}; if(lr) nv.r = lr; t.values.push(nv);
+  dnorm(); results(); header(); save();
+}, true);
 function results(){
-  const dates = S.dates;
+  const dates = DCOLS();
   let rows = "", grp = null;
   const GO = GROUPS.map(x=>x[0]), gi = g => { const k = GO.indexOf(g); return k<0 ? 999 : k; };
   const ALL = S.tests.concat(EXTRA_ORD.map(([n,w,g])=>({name:n, unit:"", explain:w, range:"", group:g, values:[], extra:true})));
@@ -489,8 +591,8 @@ function results(){
     const last = t.values[t.values.length-1];
     if(onlyFlag && !t.values.some(v=>v.f!=="n")) return;
     if(rGroup!=="all" && t.group!==rGroup) return;
-    if(t.group!==grp){ grp=t.group; rows += `<tr class="grp"><td colspan="${dates.length+5}">${esc(grp)}</td></tr>`; }
-    const cells = dates.map(d => { const v=t.values.find(x=>x.d===d); const cn=(CNOTE[t.name]||{})[d]; return v?`<td class="v ${v.f}">${esc(v.v)}${FL[v.f]?`<span class="fl">${FL[v.f]}</span>`:''}${v.r?`<small class="crng">Lab range ${esc(v.r)}</small>`:''}${cn?`<small class="cday">${esc(cn)}</small>`:''}</td>`:'<td class="v" style="color:var(--muted)">–</td>'; }).join("");
+    if(t.group!==grp){ grp=t.group; rows += `<tr class="grp"><td colspan="${dates.length+5}"><span class="gstk">${esc(grp)}</span></td></tr>`; }
+    const cells = dates.map(d => { const v=t.values.find(x=>x.d===d); const cn=(CNOTE[t.name]||{})[d]; return v?`<td class="v ${v.f}">${esc(v.v)}${FL[v.f]?`<span class="fl">${FL[v.f]}</span>`:''}${v.r?`<small class="crng">Lab range ${v.r.length<16?`<span class="nw">${esc(v.r)}</span>`:esc(v.r)}</small>`:''}${cn?`<small class="cday">${esc(cn)}</small>`:''}</td>`:'<td class="v" style="color:var(--muted)">–</td>'; }).join("");
     const w = worst(t);
     rows += `<tr><td class="tcell ${w}"><button class="tbtn" data-open="${esc(t.name)}" ${t.extra?'disabled':''}><span class="tnm2">${esc(t.name)}</span>${t.unit?`<span class="tun">${esc(t.unit)}</span>`:''}</button><small>${esc(t.explain)}</small></td><td class="rng">${esc(t.range)}</td><td class="barc">${t.values.length ? `<div class="big">${spec(t,true,true)}</div>` : '<span class="note">Not done yet</span>'}</td>${cells}<td class="ord">${(t.extra||ORD[t.name])?`<span class="yes" aria-label="Ordered">✓</span><small>${esc(ORD[t.name]||"")}</small>`:'<span class="no" aria-label="Not ordered">✗</span>'}</td>${qcell(t.name)}</tr>`;
   });
@@ -499,7 +601,7 @@ function results(){
     <div class="bar">
       <button class="chip" id="flagtoggle" aria-pressed="${onlyFlag}">Only show tests that were ever out of range</button>
     </div>
-    <div class="legend"><span><i style="background:var(--low-soft);border:1px solid var(--low)"></i>Low</span><span><i style="background:var(--high-soft);border:1px solid var(--high)"></i>High</span><span><i style="background:var(--note-soft);border:1px solid var(--note)"></i>Can't be read as is</span><span><i style="background:var(--ok-soft);border:1px solid var(--ok)"></i>In range</span><span><i style="background:var(--zl);width:22px;height:8px;border-radius:4px"></i>Low zone</span><span><i style="background:var(--zn);width:22px;height:8px;border-radius:4px"></i>Normal zone</span><span><i style="background:var(--zh);width:22px;height:8px;border-radius:4px"></i>High zone</span><span><i style="background:var(--d0);width:6px;height:14px;border-radius:2px"></i>Latest result</span><span>${DSORT().slice(1).map(d=>`<i style="background:var(--d${drank(d)});width:9px;height:9px;border-radius:50%;margin-right:3px"></i>`).join("")}Earlier results</span><span>Click a test name for the full explanation.</span></div>
+    <div class="legend"><span><i style="background:var(--low-soft);border:1px solid var(--low)"></i>Low</span><span><i style="background:var(--high-soft);border:1px solid var(--high)"></i>High</span><span><i style="background:var(--note-soft);border:1px solid var(--note)"></i>Can't be read as is</span><span><i style="background:var(--ok-soft);border:1px solid var(--ok)"></i>In range</span><span><i style="background:var(--zl);width:22px;height:8px;border-radius:4px"></i>Low zone</span><span><i style="background:var(--zn);width:22px;height:8px;border-radius:4px"></i>Normal zone</span><span><i style="background:var(--zh);width:22px;height:8px;border-radius:4px"></i>High zone</span><span><i style="background:var(--d0);width:6px;height:14px;border-radius:2px"></i>Latest result</span><span>${DLEG()}Earlier results</span><span><i style="background:none;border:1.5px dashed var(--d0);width:22px;height:10px;border-radius:4px;opacity:.7"></i>Latest lab's own range, if different</span><span>Click a test name for the full explanation.</span></div>
     <style>
      #v-results td.tcell{min-width:190px;border-left:4px solid var(--ok);background:var(--ok-soft)}
      #v-results td.tcell.l{border-left-color:var(--low);background:var(--low-soft)}#v-results td.tcell.h{border-left-color:var(--high);background:var(--high-soft)}#v-results td.tcell.x{border-left-color:var(--note);background:var(--note-soft)}
@@ -514,8 +616,9 @@ function results(){
      #v-results .side.open{display:block}
      #v-results .x-close{display:inline-block}
     </style>
-    <div class="tablewrap"><table>
-      <thead><tr><th>Test</th><th>Normal range</th><th>Results on the range</th>${dates.map(d=>`<th class="dth" style="--mc:var(--d${drank(d)})"><i class="dsw" aria-hidden="true"></i>${esc(dmon(d))}${DNOTE[d]?`<small class="dlab">${esc(DNOTE[d])}</small>`:""}</th>`).join("")}<th>Labs ordered now</th><th>Questions to ask</th></tr></thead>
+    ${DCTRL()}
+    <div class="tablewrap rwrap"><table class="rtab${dates.length>5?' many':''}">
+      <thead><tr><th>Test</th><th>Normal range</th><th>Results on the range</th>${dates.map(d=>`<th class="dth" style="--mc:var(--d${drank(d)})"><span class="dnm"><i class="dsw" aria-hidden="true"></i>${esc(dmon(d))}</span>${DNOTE[d]?`<small class="dlab">${esc(DNOTE[d])}</small>`:""}</th>`).join("")}<th>Labs ordered now</th><th>Questions to ask</th></tr></thead>
       <tbody>${rows}</tbody>
     </table></div><aside class="side" id="tside" aria-live="polite"></aside>
     <form class="card" id="addr">
@@ -525,9 +628,11 @@ function results(){
         <label for="nr-test">Test<input id="nr-test" list="tests" required></label>
         <datalist id="tests">${S.tests.map(t=>`<option value="${esc(t.name)}">`).join("")}</datalist>
         <label for="nr-date">Date (e.g. Jan 2027)<input id="nr-date" required></label>
+        <label for="nr-lab">Lab and country (e.g. UW Health, US)<input id="nr-lab" list="labs"></label><datalist id="labs">${[...new Set(Object.values(DNOTE))].map(l=>`<option value="${esc(l)}">`).join("")}</datalist>
         <label for="nr-val">Result<input id="nr-val" required></label>
         <label for="nr-flag">Compared with range<select id="nr-flag"><option value="n">In range</option><option value="l">Low</option><option value="h">High</option><option value="x">Can't be read as is</option></select></label>
         <label for="nr-range">Normal range (new tests)<input id="nr-range"></label>
+        <label for="nr-labr">Range printed on the lab report<input id="nr-labr"></label>
         <button class="btn" type="submit">Add result</button>
       </div>
     </form>
@@ -879,7 +984,7 @@ const PLAIN = {"SHBG": {"f": ["Doctors check SHBG to read a testosterone result 
 const QMAP = {"q2": ["Lipoprotein(a)"], "q3": ["Cortisol"], "q4": ["LDL cholesterol", "Total cholesterol", "Non-HDL cholesterol"], "q5": ["Folate (red cell)"], "q6": ["Iron", "Magnesium"], "q7": ["Lymphocytes"], "q8": ["Free T3"], "q9": ["hsCRP"], "g-shbg": ["SHBG"], "g-igf": ["IGF-1"], "g-rbc": ["Hematocrit", "MCHC"], "g-protein": ["Total protein"], "g-sodium": ["Urine sodium"], "g-aptt": ["APTT (clotting time)"], "g-borderline": ["Vitamin D", "Vitamin B12", "Zinc", "Homocysteine"], "g-jet": ["Cortisol"], "g-iron": ["Iron", "Ferritin"], "g-fam": ["LDL cholesterol", "Lipoprotein(a)"], "g-bun": ["BUN (kidney)", "eGFR (kidney filtering)", "Creatinine (kidney)"], "g-cl": ["Chloride", "Anion gap"]};
 function qcell(name){ const qs = S.questions.filter(q=>(QMAP[q.id]||[]).includes(name)); return `<td class="qcol">${qs.map(q=>`<div class="qc ${q.status}"><b>${esc(q.q)}</b>${q.list?`<ul class="qchk">${q.list.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}${q.status==="answered"?"<small>Answered</small>":q.status==="asked"?"<small>Asked</small>":""}</div>`).join('')}</td>`; }
 let rGroup = "all", tSel = null, tFam = "all", tSt = "all";
-function regroup(){
+function regroup(){ dnorm();
   const ix = {}; GROUPS.forEach(([g,ns],gi)=>ns.forEach((n,ni)=>ix[n]=[g,gi*100+ni]));
   S.tests.forEach((t,k)=>{ if(ix[t.name]) t.group = ix[t.name][0]; t.__o = ix[t.name] ? ix[t.name][1] : 9000+k; });
   S.tests.sort((a,b)=>a.__o-b.__o); S.tests.forEach(t=>delete t.__o);
@@ -908,8 +1013,9 @@ function spec(t, big, tm){
   if(!s) return `<div class="spec"><span class="none"></span></div><div class="speclab"><span>No number range to plot</span></div>`;
   const z = s.rg.lo!==null ? `<span class="zl" style="width:${s.a}%"></span><span class="zn" style="width:${s.b-s.a}%"></span><span class="zh" style="width:${100-s.b}%"></span>` : `<span class="zn" style="width:${s.b}%;border-radius:5px 0 0 5px"></span><span class="zh" style="width:${100-s.b}%"></span>`;
   const vs = t.values.map((v,i)=>({v, i, n:numv(v.v), r:drank(v.d)})).filter(o=>o.n!==null).sort((a,b)=>(b.r-a.r)||(a.i-b.i));
-  const mk = vs.map(o=>`<i class="mk${o.r===0?' new':''}" style="left:${s.p(o.n)}%;--mc:var(--d${o.r})" title="${esc(o.v.d)}: ${esc(o.v.v)}"></i>`).join('');
-  const st = big && vs.length ? `<div class="mstack">${vs.slice().reverse().map(o=>`<span class="ml${o.r===0?' new':''}" style="--mc:var(--d${o.r});--mt:var(--dt${o.r})"><i></i><b>${esc(o.v.v)}</b><span>${esc(dmon(o.v.d))}</span></span>`).join('')}</div>` : '';
+  const mk = LRO(s, vs) + vs.map(o=>`<i class="mk${o.r===0?' new':o.r>4?' old':''}" style="left:${s.p(o.n)}%;--mc:var(--d${o.r})" title="${esc(o.v.d)}${DNOTE[o.v.d]?' · '+esc(DNOTE[o.v.d]):''}: ${esc(o.v.v)}"></i>`).join('');
+  const nw = vs.slice().reverse(), more = nw.length-5;
+  const st = big && vs.length ? `<div class="mstack">${nw.map((o,k)=>`<span class="ml${o.r===0?' new':''}${k>=5?' x':''}" style="--mc:var(--d${o.r});--mt:var(--dt${o.r})"><i></i><b>${esc(o.v.v)}</b><span>${esc(dmon(o.v.d))}</span></span>`).join('')}${more>0?`<button type="button" class="mmore" data-mmore="+${more} older" aria-expanded="false">+${more} older</button>`:''}</div>` : '';
   if(tm) return `<div class="spec">${z}${mk}</div>${st}`;
   return `<div class="spec">${z}${mk}</div><div class="speclab"><span>${s.rg.lo!==null?'low &lt; '+s.rg.lo:''}</span><span>${s.rg.hi!==null?'high &gt; '+s.rg.hi:''}</span></div>${st}`;
 }
@@ -930,7 +1036,7 @@ function tilesView(){
   const tiles = [...new Set(S.tests.map(t=>t.group))].map(g=>{ const h = S.tests.map((t,i)=>t.group===g?tl[i]:'').join(''); return h ? `<div class="gsec"><h3 class="gh">${esc(g)}</h3><div class="rgrid">${h}</div></div>` : ''; }).join('');
   $("v-tiles").innerHTML = `<div style="display:grid;gap:12px">
     <div class="bar">${ch("ts","all","All results",tSt)}${ch("ts","abn","Ever out of range",tSt)}${ch("ts","ord","Ordered now",tSt)}${ch("ts","nord","Not ordered",tSt)}</div>
-    <div class="cidx"><div><b>Tile colour</b><span><i style="background:var(--low-soft);border-top:4px solid var(--low)"></i>Was low</span><span><i style="background:var(--high-soft);border-top:4px solid var(--high)"></i>Was high</span><span><i style="background:var(--note-soft);border-top:4px solid var(--note)"></i>Can't be read as drawn</span><span><i style="background:var(--ok-soft);border-top:4px solid var(--ok)"></i>Always in range</span></div><div><b>Range bar</b><span><i class="bar-i" style="background:var(--zl)"></i>Low zone</span><span><i class="bar-i" style="background:var(--zn)"></i>Normal zone</span><span><i class="bar-i" style="background:var(--zh)"></i>High zone</span><span><i class="mk-i" style="background:var(--d0);width:6px"></i>Latest result</span><span>${DSORT().slice(1).map(d=>`<i class="dot" style="background:var(--d${drank(d)});width:9px;height:9px"></i>`).join("")}Earlier results</span></div><div><b>Labs</b><span style="color:var(--ok);font-weight:600">✓ Ordered now</span><span style="font-weight:600">✗ Not ordered</span></div></div>
+    <div class="cidx"><div><b>Tile colour</b><span><i style="background:var(--low-soft);border-top:4px solid var(--low)"></i>Was low</span><span><i style="background:var(--high-soft);border-top:4px solid var(--high)"></i>Was high</span><span><i style="background:var(--note-soft);border-top:4px solid var(--note)"></i>Can't be read as drawn</span><span><i style="background:var(--ok-soft);border-top:4px solid var(--ok)"></i>Always in range</span></div><div><b>Range bar</b><span><i class="bar-i" style="background:var(--zl)"></i>Low zone</span><span><i class="bar-i" style="background:var(--zn)"></i>Normal zone</span><span><i class="bar-i" style="background:var(--zh)"></i>High zone</span><span><i class="mk-i" style="background:var(--d0);width:6px"></i>Latest result</span><span>${DLEG(1)}Earlier results</span></div><div><b>Labs</b><span style="color:var(--ok);font-weight:600">✓ Ordered now</span><span style="font-weight:600">✗ Not ordered</span></div></div>
     <div class="lay"><div>${tiles || '<p class="note">No tests match these filters.</p>'}</div><aside class="side" id="tside" aria-live="polite"></aside></div></div>`;
   tPanel(tSel);
 }
@@ -944,7 +1050,7 @@ function tPanel(i){
     <div class="ph"><div class="psym ${w}">${esc(SYM[t.name]||t.name.slice(0,3))}</div><div><h2 style="font-size:20px">${esc(t.name)}</h2><span class="pill ${lv.f}">Latest ${esc(lv.v)} ${esc(t.unit)} · ${lv.f==="n"?"in range":FL[lv.f].toLowerCase()}</span></div></div>
     ${P && P.f ? `<div class="blk"><h3>What this test is for</h3>${P.f.map(p=>`<p style="margin:0 0 8px">${esc(p)}</p>`).join('')}</div>` : ''}${P ? `<div class="blk"><h3>What it means</h3>${P.w.map(p=>`<p style="margin:0 0 8px">${esc(p)}</p>`).join('')}</div>${blk("What it means for Gaurav", P.y)}` : blk("What it measures", t.explain)}
     <div class="big" style="margin:14px 0 4px">${spec(t,true)}</div>
-    <div class="hist">${t.values.map(v=>`<div><span><i class="hdot" style="--mc:var(--d${drank(v.d)})"></i>${esc(dmon(v.d))}${DNOTE[v.d]?` · ${esc(DNOTE[v.d])}`:''}</span><span class="vv ${v.f}">${esc(v.v)} ${FL[v.f]||''}${v.r?`<small class="crng">Lab range ${esc(v.r)}</small>`:''}</span></div>`).join('')}<div><span>Normal range</span><span>${esc(t.range)}</span></div></div>
+    <div class="hist">${DNEW(t.values).map(v=>`<div><span><i class="hdot" style="--mc:var(--d${drank(v.d)})"></i>${esc(dmon(v.d))}${DNOTE[v.d]?` · ${esc(DNOTE[v.d])}`:''}</span><span class="vv ${v.f}">${esc(v.v)} ${FL[v.f]||''}${v.r?`<small class="crng">Lab range ${esc(v.r)}</small>`:''}</span></div>`).join('')}<div><span>Normal range</span><span>${esc(t.range)}</span></div></div>
     <div class="ordline ${o?'y':'n'}">${o?`✓ Ordered now · ${esc(o)}`:"✗ Not ordered yet"}</div>
     ${blk("What this result means", d.why || (w==="n" ? "In range on every test so far." : "Outside the lab's range at least once."))}
     ${blk("Possible causes", d.causes)}
